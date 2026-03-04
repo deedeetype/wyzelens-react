@@ -8,8 +8,6 @@ export default defineConfig({
         alias: {
             '@': path.resolve(__dirname, './src')
         }
-    },
-    define: {
-        'process.env': process.env
     }
+    // No define needed - Vite handles import.meta.env automatically
 });
