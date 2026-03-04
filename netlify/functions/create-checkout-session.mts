@@ -65,8 +65,8 @@ export const handler: Handler = async (event) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.VITE_APP_URL || 'https://wyzelens.com'}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.VITE_APP_URL || 'https://wyzelens.com'}/pricing`,
+      success_url: `${process.env.URL || 'https://wyzelens-react.netlify.app'}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.URL || 'https://wyzelens-react.netlify.app'}/pricing`,
       metadata: {
         userId,
         planId,
