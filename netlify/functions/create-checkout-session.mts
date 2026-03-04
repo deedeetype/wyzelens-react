@@ -41,9 +41,9 @@ export const handler: Handler = async (event) => {
 
     // Price IDs from Stripe Dashboard
     const priceIds: Record<string, string> = {
-      starter: process.env.STRIPE_STARTER_PRICE_ID || 'price_starter',
-      pro: process.env.STRIPE_PRO_PRICE_ID || 'price_pro',
-      business: process.env.STRIPE_BUSINESS_PRICE_ID || 'price_business',
+      starter: process.env.STRIPE_PRICE_STARTER!,
+      pro: process.env.STRIPE_PRICE_PRO!,
+      business: process.env.STRIPE_PRICE_BUSINESS!,
     };
 
     const priceId = priceIds[planId];
