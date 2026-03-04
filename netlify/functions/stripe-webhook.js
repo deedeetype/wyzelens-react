@@ -1,24 +1,20 @@
-import { Handler } from '@netlify/functions';
-import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-});
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 const supabase = createClient(
-  SUPABASE_URL!,
-  SUPABASE_SERVICE_KEY!
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY
 );
 
-export const handler: Handler = async (event) => {
+exports.handler = async (event) => {
   console.log('Stripe webhook received:', event.httpMethod);
+  console.log('Headers:', JSON.stringify(event.headers));
   
-  const sig = event.headers['stripe-signature']!;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const sig = event.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
     console.error('STRIPE_WEBHOOK_SECRET not configured');
@@ -28,12 +24,12 @@ export const handler: Handler = async (event) => {
     };
   }
 
-  let stripeEvent: Stripe.Event;
+  let stripeEvent;
 
   try {
-    stripeEvent = stripe.webhooks.constructEvent(event.body!, sig, webhookSecret);
+    stripeEvent = stripe.webhooks.constructEvent(event.body, sig, webhookSecret);
     console.log('Webhook event type:', stripeEvent.type);
-  } catch (err: any) {
+  } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return {
       statusCode: 400,
@@ -44,48 +40,58 @@ export const handler: Handler = async (event) => {
   // Handle the event
   switch (stripeEvent.type) {
     case 'checkout.session.completed': {
-      const session = stripeEvent.data.object as Stripe.Checkout.Session;
+      const session = stripeEvent.data.object;
       const { userId, planId } = session.metadata || {};
 
       console.log('Processing checkout.session.completed for userId:', userId, 'planId:', planId);
       
       if (userId && planId) {
-        // Update user subscription in Supabase
-        const { data, error } = await supabase
-          .from('user_subscriptions')
-          .upsert({
-            user_id: userId,
-            plan: planId,
-            status: 'active',
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+        try {
+          // Update user subscription in Supabase
+          const { data, error } = await supabase
+            .from('user_subscriptions')
+            .upsert({
+              user_id: userId,
+              plan: planId,
+              status: 'active',
+              stripe_customer_id: session.customer,
+              stripe_subscription_id: session.subscription,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id'
+            })
+            .select()
+            .single();
 
-        if (error) {
-          console.error('Failed to update subscription:', error);
-        } else {
-          console.log('Subscription updated successfully:', data);
+          if (error) {
+            console.error('Failed to update subscription:', error);
+          } else {
+            console.log('Subscription updated successfully:', data);
+          }
+
+          // Also update profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              subscription_tier: planId,
+              subscription_status: 'active',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', userId);
+            
+          if (profileError) {
+            console.error('Failed to update profile:', profileError);
+          }
+        } catch (error) {
+          console.error('Database error:', error);
         }
-
-        // Also update profile
-        await supabase
-          .from('profiles')
-          .update({
-            subscription_tier: planId,
-            subscription_status: 'active',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId);
       }
       break;
     }
 
     case 'customer.subscription.deleted': {
-      const subscription = stripeEvent.data.object as Stripe.Subscription;
+      const subscription = stripeEvent.data.object;
       
       // Find user by stripe_subscription_id
       const { data: subs } = await supabase
@@ -118,7 +124,7 @@ export const handler: Handler = async (event) => {
     }
 
     case 'customer.subscription.updated': {
-      const subscription = stripeEvent.data.object as Stripe.Subscription;
+      const subscription = stripeEvent.data.object;
       
       // Handle subscription updates (e.g., plan changes)
       const { data: subs } = await supabase
@@ -146,6 +152,9 @@ export const handler: Handler = async (event) => {
       }
       break;
     }
+
+    default:
+      console.log(`Unhandled event type ${stripeEvent.type}`);
   }
 
   return {
