@@ -1,7 +1,12 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/react'
 import { Check, Crown, Zap, Shield } from 'lucide-react'
 
 export default function Pricing() {
+  const navigate = useNavigate()
+  const { user } = useUser()
+  const [loading, setLoading] = useState('')
   const plans = [
     {
       name: 'Free',
@@ -16,7 +21,8 @@ export default function Pricing() {
       ],
       cta: 'Start Free',
       href: '/sign-up',
-      highlighted: false
+      highlighted: false,
+      planId: 'free'
     },
     {
       name: 'Starter',
@@ -32,7 +38,8 @@ export default function Pricing() {
       ],
       cta: 'Start Trial',
       href: '/sign-up',
-      highlighted: false
+      highlighted: false,
+      planId: 'starter'
     },
     {
       name: 'Pro',
@@ -49,7 +56,8 @@ export default function Pricing() {
       ],
       cta: 'Start Trial',
       href: '/sign-up',
-      highlighted: true
+      highlighted: true,
+      planId: 'pro'
     },
     {
       name: 'Business',
@@ -66,7 +74,8 @@ export default function Pricing() {
       ],
       cta: 'Contact Sales',
       href: '/sign-up',
-      highlighted: false
+      highlighted: false,
+      planId: 'business'
     }
   ]
 
@@ -140,16 +149,59 @@ export default function Pricing() {
                   ))}
                 </ul>
 
-                <Link
-                  to={plan.href}
-                  className={`block text-center px-6 py-3 rounded-lg font-semibold transition ${
-                    plan.highlighted
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                      : 'bg-slate-800 hover:bg-slate-700 text-white'
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
+                {plan.planId === 'free' || !user ? (
+                  <Link
+                    to={plan.href}
+                    className={`block text-center px-6 py-3 rounded-lg font-semibold transition ${
+                      plan.highlighted
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-white'
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      if (loading) return
+                      setLoading(plan.planId)
+                      
+                      try {
+                        const response = await fetch('/.netlify/functions/create-checkout-session', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'x-user-email': user.primaryEmailAddress?.emailAddress || '',
+                          },
+                          body: JSON.stringify({
+                            planId: plan.planId,
+                            userId: user.id,
+                          }),
+                        })
+                        
+                        const data = await response.json()
+                        
+                        if (data.url) {
+                          window.location.href = data.url
+                        } else {
+                          throw new Error('No checkout URL received')
+                        }
+                      } catch (error) {
+                        console.error('Checkout error:', error)
+                        alert('Failed to start checkout. Please try again.')
+                        setLoading('')
+                      }
+                    }}
+                    disabled={loading === plan.planId}
+                    className={`w-full text-center px-6 py-3 rounded-lg font-semibold transition ${
+                      plan.highlighted
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {loading === plan.planId ? 'Loading...' : plan.cta}
+                  </button>
+                )}
               </div>
             ))}
           </div>
