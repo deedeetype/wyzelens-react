@@ -1,0 +1,52 @@
+import { useEffect, useState } from 'react'
+import { createSupabaseClient, type Insight } from '@/lib/supabase'
+import { useAuth } from '@clerk/react'
+
+export function useInsights(scanId?: string, limit?: number) {
+  const { getToken } = useAuth()
+  const [insights, setInsights] = useState<Insight[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    fetchInsights()
+  }, [scanId, limit])
+
+  async function fetchInsights() {
+    try {
+      setLoading(true)
+      const token = await getToken({ template: 'supabase' })
+      const supabase = createSupabaseClient(token || undefined)
+      
+      let query = supabase
+        .from('insights')
+        .select('*')
+        .eq('archived', false) // Only show non-archived insights
+        .order('created_at', { ascending: false })
+
+      if (scanId) {
+        query = query.eq('scan_id', scanId)
+      }
+
+      if (limit) {
+        query = query.limit(limit)
+      }
+
+      const { data, error} = await query
+
+      if (error) throw error
+      setInsights(data || [])
+    } catch (err) {
+      setError(err as Error)
+      console.error('Error fetching insights:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function archiveInsightOptimistic(insightId: string) {
+    setInsights(prev => prev.filter(i => i.id !== insightId))
+  }
+
+  return { insights, loading, error, refetch: fetchInsights, archiveInsightOptimistic }
+}
