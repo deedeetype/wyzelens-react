@@ -1,0 +1,11 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for WyzeLens",
+  "dependencies": {
+    "@netlify/functions": "^2.4.1",
+    "@supabase/supabase-js": "^2.39.7",
+    "stripe": "^14.21.0",
+    "svix": "^1.15.0"
+  }
+}
