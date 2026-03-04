@@ -6,19 +6,33 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 });
 
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  SUPABASE_URL!,
+  SUPABASE_SERVICE_KEY!
 );
 
 export const handler: Handler = async (event) => {
+  console.log('Stripe webhook received:', event.httpMethod);
+  
   const sig = event.headers['stripe-signature']!;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET not configured');
+    return {
+      statusCode: 500,
+      body: 'Webhook secret not configured',
+    };
+  }
 
   let stripeEvent: Stripe.Event;
 
   try {
     stripeEvent = stripe.webhooks.constructEvent(event.body!, sig, webhookSecret);
+    console.log('Webhook event type:', stripeEvent.type);
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
     return {
@@ -33,9 +47,11 @@ export const handler: Handler = async (event) => {
       const session = stripeEvent.data.object as Stripe.Checkout.Session;
       const { userId, planId } = session.metadata || {};
 
+      console.log('Processing checkout.session.completed for userId:', userId, 'planId:', planId);
+      
       if (userId && planId) {
         // Update user subscription in Supabase
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('user_subscriptions')
           .upsert({
             user_id: userId,
@@ -46,10 +62,13 @@ export const handler: Handler = async (event) => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', userId);
+          .select()
+          .single();
 
         if (error) {
           console.error('Failed to update subscription:', error);
+        } else {
+          console.log('Subscription updated successfully:', data);
         }
 
         // Also update profile
