@@ -7,6 +7,7 @@ import Dashboard from '@/pages/Dashboard'
 import LandingPage from '@/pages/LandingPage'
 import Pricing from '@/pages/Pricing'
 import Demo from '@/pages/Demo'
+import Onboarding from '@/pages/Onboarding'
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -48,6 +49,14 @@ function App() {
                 <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" forceRedirectUrl="/dashboard" />} />
                 <Route path="/demo" element={<Demo />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route
+                  path="/onboarding"
+                  element={
+                    <ProtectedRoute>
+                      <Onboarding />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/dashboard"
                   element={
