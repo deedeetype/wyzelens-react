@@ -70,15 +70,29 @@ export default function AutomatedScansSettings() {
       
       console.log('[AutomatedScans] Fetching scans via API for user:', user.id)
       
-      // Use API route with service role key (bypasses RLS issue with Clerk JWT)
-      // Pass userId as query param since getAuth() requires middleware setup
-      const response = await fetch(`/api/scans/list?userId=${encodeURIComponent(user.id)}`)
+      // Fetch scans directly from Supabase
+      const { data: scansData, error: scansError } = await supabase
+        .from('scans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+      if (scansError) {
+        console.error('[AutomatedScans] Error fetching scans:', scansError)
+        throw scansError
       }
       
-      const { scans: scansData, schedules: schedulesData } = await response.json()
+      // Fetch schedules
+      const { data: schedulesData, error: schedulesError } = await supabase
+        .from('scan_schedules')
+        .select('*')
+        .eq('user_id', user.id)
+      
+      if (schedulesError) {
+        console.error('[AutomatedScans] Error fetching schedules:', schedulesError)
+        throw schedulesError
+      }
       
       console.log('[AutomatedScans] Found scans:', scansData?.length || 0, scansData)
       console.log('[AutomatedScans] Found schedules:', schedulesData?.length || 0)

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/react'
 import { Check, Crown, Zap, Shield } from 'lucide-react'
+import { useSubscription } from '@/hooks/useSubscription'
 
 export default function Pricing() {
   const navigate = useNavigate()
   const { user } = useUser()
+  const { plan: currentPlan } = useSubscription()
   const [loading, setLoading] = useState('')
   const plans = [
     {
@@ -129,6 +131,14 @@ export default function Pricing() {
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                       <Crown className="w-4 h-4" />
                       Most Popular
+                    </div>
+                  </div>
+                )}
+                
+                {currentPlan === plan.planId && (
+                  <div className="absolute -top-4 right-4">
+                    <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                      Current Plan
                     </div>
                   </div>
                 )}
