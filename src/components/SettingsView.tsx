@@ -113,66 +113,38 @@ export default function SettingsView() {
       {activeSection === 'profile' && (
         <>
       {/* Appearance */}
-
-      {/* Appearance */}
       <div className={`${cardClass} mb-6`}>
         <h3 className="text-lg font-bold text-white light:text-slate-900 mb-4 flex items-center gap-2">
           <Zap className="w-5 h-5" />
           {t('settings.appearance')}
         </h3>
         
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Theme Toggle */}
-          <div>
-            <label className={labelClass}>{t('settings.theme')}</label>
-            <div className="flex gap-2">
-              {(['dark', 'light'] as const).map(theme => (
-                <button
-                  key={theme}
-                  onClick={() => { updateSettings({ theme }); showSaved() }}
-                  className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition ${
-                    settings.theme === theme
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
-                  }`}
-                >
-                  {theme === 'dark' ? (
-                    <span className="flex items-center gap-2">
-                      <Moon className="w-4 h-4" />
-                      Dark
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Sun className="w-4 h-4" />
-                      Light
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Language */}
-          <div>
-            <label className={labelClass}>{t('settings.language')}</label>
-            <div className="flex gap-2">
-              {([{ code: 'en' as const, label: 'English', flag: '🇬🇧' }, { code: 'fr' as const, label: 'Français', flag: '🇫🇷' }]).map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => { updateSettings({ language: lang.code }); showSaved() }}
-                  className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition ${
-                    settings.language === lang.code
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
-                  }`}
-                >
+        <div>
+          <label className={labelClass}>{t('settings.theme')}</label>
+          <div className="flex gap-2">
+            {(['dark', 'light'] as const).map(theme => (
+              <button
+                key={theme}
+                onClick={() => { updateSettings({ theme }); showSaved() }}
+                className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition ${
+                  settings.theme === theme
+                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                }`}
+              >
+                {theme === 'dark' ? (
                   <span className="flex items-center gap-2">
-                    <span>{lang.flag}</span>
-                    {lang.label}
+                    <Moon className="w-4 h-4" />
+                    Dark
                   </span>
-                </button>
-              ))}
-            </div>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Sun className="w-4 h-4" />
+                    Light
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
       </div>
