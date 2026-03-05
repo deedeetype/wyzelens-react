@@ -148,23 +148,33 @@ export default function AutomatedScansSettings() {
 
       if (existingSchedule) {
         // Update existing schedule
+        console.log('[AutomatedScans] Updating existing schedule:', existingSchedule.id)
         const { error } = await supabase
           .from('scan_schedules')
-          .update(schedule)
+          .update({
+            ...schedule,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', existingSchedule.id)
 
         if (error) throw error
       } else {
         // Create new schedule
+        console.log('[AutomatedScans] Creating new schedule for scan:', scanId)
         const { error } = await supabase
           .from('scan_schedules')
           .insert({
             user_id: userId,
             scan_id: scanId,
-            ...schedule
+            ...schedule,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           })
 
-        if (error) throw error
+        if (error) {
+          console.error('[AutomatedScans] Insert error details:', error)
+          throw error
+        }
       }
 
       await fetchScansAndSchedules()
