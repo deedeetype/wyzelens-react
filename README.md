@@ -1,63 +1,75 @@
-# WyzeLens
+# WyzeLens React
 
-AI-powered competitive intelligence platform that transforms market noise into strategic advantage.
+AI-powered competitive intelligence platform built with React + Vite.
 
-## 🚀 Tech Stack
+## 🚀 Features
 
-- **Frontend:** React 18 + TypeScript + Vite
-- **Styling:** Tailwind CSS
-- **Auth:** Clerk
-- **Database:** Supabase
-- **Payments:** Stripe
-- **Deployment:** Netlify
-- **AI:** Perplexity + Claude
+- **Real-time Competitive Intelligence**: Track competitors, news, and market trends
+- **AI Analysis**: Powered by Perplexity AI and Claude (via POE)
+- **User Authentication**: Clerk authentication with onboarding flow
+- **Subscription Management**: Stripe integration for paid plans
+- **Multi-Industry Profiles**: Track multiple markets simultaneously
+- **Automated Alerts**: Get notified of important competitive changes
 
-## 📦 Installation
+## 🏷️ Version Tags
 
+- `v1.0.0-react-stable` - First stable React version with all core features working
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS
+- **Authentication**: Clerk
+- **Database**: Supabase
+- **Payments**: Stripe
+- **Deployment**: Netlify
+- **Functions**: Netlify Functions (serverless)
+
+## 📦 Setup
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Copy `.env.example` to `.env` and fill in your keys
+4. Run locally: `npm run dev`
+5. Build: `npm run build`
+
+## 🔑 Environment Variables
+
+### Frontend (VITE_*)
+- `VITE_CLERK_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+
+### Netlify Functions
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CLERK_WEBHOOK_SECRET`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_STARTER`
+- `STRIPE_PRICE_PRO`
+- `STRIPE_PRICE_BUSINESS`
+- `PERPLEXITY_API_KEY`
+- `POE_API_KEY`
+
+## 🚨 Important Notes
+
+- This is a React + Vite migration from Next.js to fix ChunkLoadError issues
+- Stripe webhook URL must be: `https://your-site.netlify.app/.netlify/functions/stripe-webhook`
+- Clerk webhook URL must be: `https://your-site.netlify.app/.netlify/functions/clerk-webhook`
+
+## 📝 Restore Points
+
+To restore to this stable version:
 ```bash
-npm install
+git checkout v1.0.0-react-stable
 ```
 
-## 🔧 Environment Variables
+## 🤝 Contributing
 
-Copy `.env.example` to `.env.local` and fill in your credentials:
+This is a private repository. Contact david.laborieux@gmail.com for access.
 
-```bash
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
-```
+---
 
-## 🏃 Development
-
-```bash
-npm run dev
-```
-
-## 🏗️ Build
-
-```bash
-npm run build
-```
-
-## 🚢 Deploy
-
-Push to main branch - Netlify will auto-deploy.
-
-## 📝 Features
-
-- ✅ Real-time competitor tracking
-- ✅ AI-powered insights
-- ✅ Automated alerts
-- ✅ Industry analytics
-- ✅ News feed aggregation
-- ✅ Subscription plans (Free/Starter/Pro/Business)
-
-## 🔄 Migration Notes
-
-This is a React port of the original Next.js version. All core functionality has been preserved with improved performance and simpler architecture.
-
-## 📄 License
-
-Proprietary - All rights reserved
+Built with ❤️ by Labwyze Inc.
