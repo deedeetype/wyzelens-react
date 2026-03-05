@@ -193,7 +193,6 @@ function ScheduleCard({
   const [enabled, setEnabled] = useState(schedule?.enabled ?? false)
   const [frequency, setFrequency] = useState(schedule?.frequency || 'weekly')
   const [dayOfWeek, setDayOfWeek] = useState(schedule?.day_of_week ?? 1)
-  const [dayOfMonth, setDayOfMonth] = useState(schedule?.day_of_month ?? 1)
   const [hour, setHour] = useState(schedule?.hour ?? 9)
   const [minute, setMinute] = useState(schedule?.minute ?? 0)
   const [timezone, setTimezone] = useState(schedule?.timezone || 'America/New_York')
@@ -208,7 +207,6 @@ function ScheduleCard({
       setEnabled(schedule.enabled)
       setFrequency(schedule.frequency)
       setDayOfWeek(schedule.day_of_week ?? 1)
-      setDayOfMonth(schedule.day_of_month ?? 1)
       setHour(schedule.hour)
       setMinute(schedule.minute)
       setTimezone(schedule.timezone)
@@ -218,7 +216,6 @@ function ScheduleCard({
         enabled: schedule.enabled,
         frequency: schedule.frequency,
         day_of_week: schedule.day_of_week,
-        day_of_month: schedule.day_of_month,
         hour: schedule.hour,
         minute: schedule.minute,
         timezone: schedule.timezone
@@ -233,7 +230,6 @@ function ScheduleCard({
         enabled,
         frequency,
         day_of_week: frequency === 'weekly' ? dayOfWeek : undefined,
-        day_of_month: frequency === 'monthly' ? dayOfMonth : undefined,
         hour,
         minute,
         timezone
@@ -245,7 +241,7 @@ function ScheduleCard({
       // If no schedule exists yet, any state is a change
       setHasChanges(true)
     }
-  }, [enabled, frequency, dayOfWeek, dayOfMonth, hour, minute, timezone, lastSavedState, schedule])
+  }, [enabled, frequency, dayOfWeek, hour, minute, timezone, lastSavedState, schedule])
 
   const handleToggle = async (newEnabled: boolean) => {
     setEnabled(newEnabled)
