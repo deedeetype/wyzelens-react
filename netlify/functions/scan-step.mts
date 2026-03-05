@@ -171,12 +171,15 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   
   console.log(`[stepInit] Looking for existing ${industry} profile (companyUrl: ${companyUrl || 'null'})`)
   console.log(`[stepInit] Found ${existingProfiles.length} existing profiles`)
-  console.log(`[stepInit] Mode: ${isRefresh ? 'REFRESH' : 'NEW/RESCAN'}`)
+  
+  // Default to REFRESH mode if not explicitly set (backward compatibility)
+  const actualIsRefresh = isRefresh !== false
+  console.log(`[stepInit] Mode: ${actualIsRefresh ? 'REFRESH' : 'RESCAN'} (isRefresh param: ${isRefresh})`)
   
   if (existingProfiles && existingProfiles.length > 0) {
     const existingScan = existingProfiles[0]
     
-    if (isRefresh) {
+    if (actualIsRefresh) {
       // ═══════════════════════════════════════════════════════════════
       // REFRESH MODE: Reuse scan, update news/insights only
       // ═══════════════════════════════════════════════════════════════
