@@ -192,11 +192,11 @@ export default function NewLandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-32">
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-32 px-4">
             {/* Feature 1 */}
             <div 
               className="order-2 md:order-1"
-              style={{ transform: `translateX(${parallaxOffset * -0.3}px)` }}
+              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * -0.3 : 0}px)` }}
             >
               <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-4">
                 <Target className="w-4 h-4 text-indigo-400" />
@@ -224,9 +224,9 @@ export default function NewLandingPage() {
             
             <div 
               className="order-1 md:order-2"
-              style={{ transform: `translateX(${parallaxOffset * 0.3}px)` }}
+              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * 0.3 : 0}px)` }}
             >
-              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-6 shadow-2xl">
+              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
                 <div className="space-y-3">
                   {[
                     { name: 'Tesla Inc.', threat: 9.2, color: 'red' },
@@ -253,11 +253,11 @@ export default function NewLandingPage() {
           </div>
 
           {/* Feature 2 */}
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-32">
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-32 px-4">
             <div 
-              style={{ transform: `translateX(${parallaxOffset * -0.3}px)` }}
+              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * -0.3 : 0}px)` }}
             >
-              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-6 shadow-2xl">
+              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
                 <div className="space-y-4">
                   {[
                     { 
@@ -300,7 +300,7 @@ export default function NewLandingPage() {
             </div>
 
             <div 
-              style={{ transform: `translateX(${parallaxOffset * 0.3}px)` }}
+              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * 0.3 : 0}px)` }}
             >
               <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-4">
                 <Lightbulb className="w-4 h-4 text-purple-400" />
@@ -328,10 +328,10 @@ export default function NewLandingPage() {
           </div>
 
           {/* Feature 3 */}
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center px-4">
             <div 
               className="order-2 md:order-1"
-              style={{ transform: `translateX(${parallaxOffset * -0.3}px)` }}
+              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * -0.3 : 0}px)` }}
             >
               <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-2 mb-4">
                 <Bell className="w-4 h-4 text-red-400" />
@@ -359,9 +359,9 @@ export default function NewLandingPage() {
 
             <div 
               className="order-1 md:order-2"
-              style={{ transform: `translateX(${parallaxOffset * 0.3}px)` }}
+              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * 0.3 : 0}px)` }}
             >
-              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-6 shadow-2xl">
+              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
                 <div className="space-y-3">
                   {[
                     { 
