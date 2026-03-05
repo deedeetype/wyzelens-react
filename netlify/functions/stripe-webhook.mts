@@ -82,19 +82,9 @@ export const handler: Handler = async (event) => {
             console.log('Subscription updated successfully:', data);
           }
 
-          // Also update profile
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              subscription_tier: planId,
-              subscription_status: 'active',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('user_id', userId);
-            
-          if (profileError) {
-            console.error('Failed to update profile:', profileError);
-          }
+          // Note: users table doesn't track subscription_tier/status directly
+          // All subscription data is in user_subscriptions table
+          console.log('Subscription tracking handled via user_subscriptions table');
         } catch (error) {
           console.error('Database error:', error);
         }
@@ -123,14 +113,7 @@ export const handler: Handler = async (event) => {
           })
           .eq('user_id', subs.user_id);
 
-        await supabase
-          .from('profiles')
-          .update({
-            subscription_tier: 'free',
-            subscription_status: 'cancelled',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', subs.user_id);
+        console.log('Subscription cancelled, downgraded to free plan');
       }
       break;
     }
@@ -154,13 +137,7 @@ export const handler: Handler = async (event) => {
           })
           .eq('user_id', subs.user_id);
 
-        await supabase
-          .from('profiles')
-          .update({
-            subscription_status: subscription.status,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', subs.user_id);
+        console.log('Subscription status updated to:', subscription.status);
       }
       break;
     }
