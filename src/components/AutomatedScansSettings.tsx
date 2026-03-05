@@ -50,10 +50,11 @@ const TIMEZONES = [
 
 export default function AutomatedScansSettings() {
   const { user } = useUser()
+  const { getToken } = useAuth()
   const [scans, setScans] = useState<Scan[]>([])
   const [schedules, setSchedules] = useState<Record<string, ScanSchedule>>({})
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState<string | null>(null)
+  const [savingId, setSavingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -70,83 +71,84 @@ export default function AutomatedScansSettings() {
       }
       
       console.log('[AutomatedScans] Fetching scans for user:', user.id)
-      console.log('[AutomatedScans] User ID type:', typeof user.id)
       
-      // Debug: Let's check if any scans exist at all
-      const { data: allScans, error: allError } = await supabase
-        .from('scans')
-        .select('*')
-        .limit(5)
+      // Get Clerk token for auth
+      const token = await getToken({ template: 'supabase' })
+      
+      // Create authenticated Supabase client
+      const authClient = supabase
+      
+      if (token) {
+        // If we have a token, use it
+        const { data: scansData, error: scansError } = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/scans?user_id=eq.${user.id}&status=eq.completed&order=created_at.desc`,
+          {
+            headers: {
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+              'Authorization': `Bearer ${token}`,
+            }
+          }
+        ).then(res => res.json())
         
-      console.log('[AutomatedScans] Sample of all scans:', allScans)
-      console.log('[AutomatedScans] First scan user_id:', allScans?.[0]?.user_id, 'type:', typeof allScans?.[0]?.user_id)
-      
-      // Fetch scans directly from Supabase
-      const { data: scansData, error: scansError } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-      
-      if (scansError) {
-        console.error('[AutomatedScans] Error fetching scans:', scansError)
-        throw scansError
+        if (scansError) {
+          console.error('[AutomatedScans] Error fetching scans:', scansError)
+        } else {
+          console.log('[AutomatedScans] Found scans:', scansData?.length || 0)
+          setScans(scansData || [])
+        }
+        
+        // Fetch schedules
+        const { data: schedulesData, error: schedulesError } = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/scan_schedules?user_id=eq.${user.id}`,
+          {
+            headers: {
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+              'Authorization': `Bearer ${token}`,
+            }
+          }
+        ).then(res => res.json())
+        
+        if (!schedulesError && schedulesData) {
+          // Convert schedules to map by scan_id
+          const schedulesMap: Record<string, ScanSchedule> = {}
+          schedulesData.forEach((schedule: ScanSchedule) => {
+            schedulesMap[schedule.scan_id] = schedule
+          })
+          setSchedules(schedulesMap)
+        }
       }
       
-      // Fetch schedules
-      const { data: schedulesData, error: schedulesError } = await supabase
-        .from('scan_schedules')
-        .select('*')
-        .eq('user_id', user.id)
-      
-      if (schedulesError) {
-        console.error('[AutomatedScans] Error fetching schedules:', schedulesError)
-        throw schedulesError
-      }
-      
-      console.log('[AutomatedScans] Found scans:', scansData?.length || 0, scansData)
-      console.log('[AutomatedScans] Found schedules:', schedulesData?.length || 0)
-      
-      setScans(scansData || [])
-
-      // Convert schedules to map by scan_id
-      const schedulesMap: Record<string, ScanSchedule> = {}
-      schedulesData?.forEach((schedule: ScanSchedule) => {
-        schedulesMap[schedule.scan_id] = schedule
-      })
-      setSchedules(schedulesMap)
     } catch (error) {
-      console.error('[AutomatedScans] Error fetching scans/schedules:', error)
+      console.error('[AutomatedScans] Error:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSaveSchedule = async (scanId: string, schedule: Partial<ScanSchedule>) => {
-    setSaving(scanId)
+  const saveSchedule = async (scanId: string, schedule: Partial<ScanSchedule>) => {
+    setSavingId(scanId)
     try {
       const userId = user?.id
       if (!userId) {
         alert('User ID not available')
-        setSaving(null)
+        setSavingId(null)
         return
       }
+
+      const existingSchedule = schedules[scanId]
       
-      const existing = schedules[scanId]
-      
-      console.log('[AutomatedScans] Saving schedule for scan:', scanId, 'user:', userId, 'existing:', !!existing)
-      
-      if (existing) {
-        // Update
+      console.log('[AutomatedScans] Saving schedule for scan:', scanId, 'user:', userId, 'existing:', !!existingSchedule)
+
+      if (existingSchedule) {
+        // Update existing schedule
         const { error } = await supabase
           .from('scan_schedules')
           .update(schedule)
-          .eq('id', existing.id)
-        
+          .eq('id', existingSchedule.id)
+
         if (error) throw error
       } else {
-        // Insert
+        // Create new schedule
         const { error } = await supabase
           .from('scan_schedules')
           .insert({
@@ -154,32 +156,33 @@ export default function AutomatedScansSettings() {
             scan_id: scanId,
             ...schedule
           })
-        
+
         if (error) throw error
       }
-      
+
       await fetchScansAndSchedules()
     } catch (error) {
       console.error('Error saving schedule:', error)
       alert('Failed to save schedule')
     } finally {
-      setSaving(null)
+      setSavingId(null)
     }
   }
 
-  const handleDeleteSchedule = async (scanId: string) => {
+  const deleteSchedule = async (scanId: string) => {
     if (!confirm('Delete this automated scan schedule?')) return
-    
-    const existing = schedules[scanId]
-    if (!existing) return
-    
+
+    const schedule = schedules[scanId]
+    if (!schedule) return
+
     try {
       const { error } = await supabase
         .from('scan_schedules')
         .delete()
-        .eq('id', existing.id)
-      
+        .eq('id', schedule.id)
+
       if (error) throw error
+
       await fetchScansAndSchedules()
     } catch (error) {
       console.error('Error deleting schedule:', error)
@@ -194,9 +197,11 @@ export default function AutomatedScansSettings() {
   if (scans.length === 0) {
     return (
       <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-center">
-        <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+        <Plus className="w-12 h-12 text-slate-600 mx-auto mb-3" />
         <h3 className="text-lg font-semibold text-white mb-2">No profiles yet</h3>
-        <p className="text-slate-400 mb-4">Create an industry profile first to set up automated scans.</p>
+        <p className="text-slate-400 mb-4">
+          Create an industry profile first to set up automated scans.
+        </p>
       </div>
     )
   }
@@ -204,7 +209,7 @@ export default function AutomatedScansSettings() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <RefreshCw className="w-6 h-6 text-indigo-400" />
+        <Clock className="w-6 h-6 text-indigo-400" />
         <div>
           <h2 className="text-2xl font-bold text-white">Automated Scans</h2>
           <p className="text-slate-400">Schedule automatic profile refreshes</p>
@@ -217,26 +222,26 @@ export default function AutomatedScansSettings() {
         </p>
       </div>
 
-      {scans.map(scan => (
-        <ScanScheduleCard
+      {scans.map((scan) => (
+        <ScheduleCard
           key={scan.id}
           scan={scan}
           schedule={schedules[scan.id]}
-          onSave={(schedule) => handleSaveSchedule(scan.id, schedule)}
-          onDelete={() => handleDeleteSchedule(scan.id)}
-          saving={saving === scan.id}
+          onSave={(schedule) => saveSchedule(scan.id, schedule)}
+          onDelete={() => deleteSchedule(scan.id)}
+          saving={savingId === scan.id}
         />
       ))}
     </div>
   )
 }
 
-function ScanScheduleCard({
-  scan,
-  schedule,
-  onSave,
-  onDelete,
-  saving
+function ScheduleCard({ 
+  scan, 
+  schedule, 
+  onSave, 
+  onDelete, 
+  saving 
 }: {
   scan: Scan
   schedule?: ScanSchedule
@@ -245,7 +250,7 @@ function ScanScheduleCard({
   saving: boolean
 }) {
   const [enabled, setEnabled] = useState(schedule?.enabled ?? false)
-  const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>(schedule?.frequency || 'weekly')
+  const [frequency, setFrequency] = useState(schedule?.frequency || 'weekly')
   const [dayOfWeek, setDayOfWeek] = useState(schedule?.day_of_week ?? 1)
   const [dayOfMonth, setDayOfMonth] = useState(schedule?.day_of_month ?? 1)
   const [hour, setHour] = useState(schedule?.hour ?? 6)
@@ -264,10 +269,9 @@ function ScanScheduleCard({
     })
   }
 
-  const formatNextRun = () => {
+  const getNextRunText = () => {
     if (!schedule?.next_run_at) return 'Not scheduled'
-    const date = new Date(schedule.next_run_at)
-    return date.toLocaleString('en-US', {
+    return new Date(schedule.next_run_at).toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -289,6 +293,7 @@ function ScanScheduleCard({
           )}
         </div>
         
+        {/* Toggle */}
         <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
@@ -303,14 +308,18 @@ function ScanScheduleCard({
       {schedule?.last_run_at && (
         <div className="mb-4 p-3 bg-slate-800 rounded-lg text-sm">
           <span className="text-slate-400">Last run: </span>
-          <span className="text-white">{new Date(schedule.last_run_at).toLocaleString()}</span>
+          <span className="text-white">
+            {new Date(schedule.last_run_at).toLocaleString()}
+          </span>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         {/* Frequency */}
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-2">Frequency</label>
+          <label className="block text-sm font-medium text-slate-400 mb-2">
+            Frequency
+          </label>
           <select
             value={frequency}
             onChange={(e) => setFrequency(e.target.value as any)}
@@ -326,15 +335,19 @@ function ScanScheduleCard({
         {/* Day selector */}
         {frequency === 'weekly' && (
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Day of Week</label>
+            <label className="block text-sm font-medium text-slate-400 mb-2">
+              Day of Week
+            </label>
             <select
               value={dayOfWeek}
               onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
               disabled={!enabled}
               className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
             >
-              {DAYS_OF_WEEK.map(day => (
-                <option key={day.value} value={day.value}>{day.label}</option>
+              {DAYS_OF_WEEK.map((day) => (
+                <option key={day.value} value={day.value}>
+                  {day.label}
+                </option>
               ))}
             </select>
           </div>
@@ -342,15 +355,19 @@ function ScanScheduleCard({
 
         {frequency === 'monthly' && (
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Day of Month</label>
+            <label className="block text-sm font-medium text-slate-400 mb-2">
+              Day of Month
+            </label>
             <select
               value={dayOfMonth}
               onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
               disabled={!enabled}
               className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
             >
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                <option key={day} value={day}>{day}</option>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
               ))}
             </select>
           </div>
@@ -358,7 +375,9 @@ function ScanScheduleCard({
 
         {/* Time */}
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-2">Time</label>
+          <label className="block text-sm font-medium text-slate-400 mb-2">
+            Time
+          </label>
           <div className="flex gap-2">
             <select
               value={hour}
@@ -366,8 +385,10 @@ function ScanScheduleCard({
               disabled={!enabled}
               className="flex-1 bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
             >
-              {Array.from({ length: 24 }, (_, i) => i).map(h => (
-                <option key={h} value={h}>{h.toString().padStart(2, '0')}:00</option>
+              {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                <option key={h} value={h}>
+                  {h.toString().padStart(2, '0')}:00
+                </option>
               ))}
             </select>
           </div>
@@ -375,15 +396,19 @@ function ScanScheduleCard({
 
         {/* Timezone */}
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-2">Timezone</label>
+          <label className="block text-sm font-medium text-slate-400 mb-2">
+            Timezone
+          </label>
           <select
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
             disabled={!enabled}
             className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
           >
-            {TIMEZONES.map(tz => (
-              <option key={tz} value={tz}>{tz}</option>
+            {TIMEZONES.map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
             ))}
           </select>
         </div>
@@ -392,12 +417,13 @@ function ScanScheduleCard({
       {enabled && (
         <div className="mb-4 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
           <p className="text-indigo-300 text-sm">
-            <Clock className="w-4 h-4 inline mr-2" />
-            Next run: <strong>{formatNextRun()}</strong>
+            <Calendar className="w-4 h-4 inline mr-2" />
+            Next run: <strong>{getNextRunText()}</strong>
           </p>
         </div>
       )}
 
+      {/* Actions */}
       <div className="flex gap-3">
         <button
           onClick={handleSave}
@@ -406,7 +432,7 @@ function ScanScheduleCard({
         >
           {saving ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               Saving...
             </>
           ) : (
