@@ -390,11 +390,11 @@ export default function Dashboard() {
           setScanProgress('')
           setScanProgressPercent(0)
         }, 1500)
-      } else if (error.message?.includes('Plan limit reached')) {
-        // Handle plan limit error
+      } else if (error.message?.includes('Plan limit reached') || error.message?.includes('Refresh limit reached')) {
+        // Handle plan/refresh limit error
         setScanProgress('❌ ' + error.message)
         setScanProgressPercent(0)
-        console.error('Plan limit reached:', error)
+        console.error('Limit reached:', error)
         
         // Show upgrade modal after a delay
         setTimeout(() => {
@@ -721,8 +721,26 @@ export default function Dashboard() {
                       }, 2500)
                       
                     } catch (error: any) {
-                      setScanProgress('❌ Error: ' + error.message)
-                      setTimeout(() => setIsScanning(false), 3000)
+                      if (error.message?.includes('Refresh limit reached')) {
+                        // Handle refresh limit error - show upgrade modal
+                        setScanProgress('❌ ' + error.message)
+                        setScanProgressPercent(0)
+                        
+                        setTimeout(() => {
+                          setIsScanning(false)
+                          setScanProgress('')
+                          setScanProgressPercent(0)
+                          setUpgradeReason(error.message)
+                          setShowUpgradeModal(true)
+                        }, 2000)
+                      } else {
+                        setScanProgress('❌ Error: ' + error.message)
+                        setTimeout(() => {
+                          setIsScanning(false)
+                          setScanProgress('')
+                          setScanProgressPercent(0)
+                        }, 3000)
+                      }
                     }
                   }}
                   disabled={isScanning}
