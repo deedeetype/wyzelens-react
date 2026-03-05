@@ -93,14 +93,11 @@ export const handler = async (event) => {
       const { data, error } = await supabase
         .from('users')
         .upsert({
-          user_id: id,
+          clerk_id: id,
           email: email,
-          full_name: `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0],
-          subscription_tier: 'free',
-          subscription_status: 'active',
-          updated_at: new Date().toISOString(),
+          name: `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0],
         }, {
-          onConflict: 'user_id'
+          onConflict: 'clerk_id'
         });
 
       if (error) {
