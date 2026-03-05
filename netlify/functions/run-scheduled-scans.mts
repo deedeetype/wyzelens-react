@@ -1,17 +1,33 @@
 import { Handler } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-const CRON_SECRET = process.env.CRON_SECRET;
-
 export const handler: Handler = async (event) => {
+  // Get environment variables inside handler
+  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  const CRON_SECRET = process.env.CRON_SECRET;
+
+  console.log('[Cron] Environment check:', {
+    hasUrl: !!SUPABASE_URL,
+    hasKey: !!SUPABASE_KEY,
+    hasSecret: !!CRON_SECRET,
+  });
+
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error('[Cron] Missing Supabase credentials');
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Supabase not configured' })
+    };
+  }
+
+  // Create Supabase client inside handler
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
   // Verify the request is authorized
   const authHeader = event.headers.authorization;
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
+    console.error('[Cron] Unauthorized request');
     return {
       statusCode: 401,
       body: JSON.stringify({ error: 'Unauthorized' })
