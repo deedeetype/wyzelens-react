@@ -123,15 +123,21 @@ export const handler = async (event) => {
     console.log(`Processing ${eventType} for user:`, id, email);
 
     try {
-      // Check if user already exists
-      const { data: existingUser } = await supabase
+      // Check if user already exists (don't use .single() - it throws on no results)
+      const { data: existingUsers, error: selectError } = await supabase
         .from('users')
         .select('id')
         .eq('clerk_id', id)
-        .single();
+        .limit(1);
 
-      if (existingUser) {
+      if (selectError) {
+        console.error('Error checking existing user:', selectError);
+        throw selectError;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
         // Update existing user
+        console.log('User already exists, updating:', id);
         const { error } = await supabase
           .from('users')
           .update({
@@ -144,6 +150,7 @@ export const handler = async (event) => {
         console.log('User updated successfully:', id);
       } else {
         // Insert new user
+        console.log('User does not exist, creating:', id);
         const { error } = await supabase
           .from('users')
           .insert({
