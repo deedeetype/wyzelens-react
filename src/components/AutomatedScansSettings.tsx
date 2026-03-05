@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@clerk/react'
-import { Clock, Calendar, RefreshCw, Save, Trash2, Plus } from 'lucide-react'
+import { Clock, Calendar, RefreshCw, Save, Trash2, Plus, Check } from 'lucide-react'
 
 interface ScanSchedule {
   id: string
@@ -54,7 +54,6 @@ export default function AutomatedScansSettings() {
   const [scans, setScans] = useState<Scan[]>([])
   const [schedules, setSchedules] = useState<Record<string, ScanSchedule>>({})
   const [loading, setLoading] = useState(true)
-  const [savingId, setSavingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -132,87 +131,6 @@ export default function AutomatedScansSettings() {
     }
   }
 
-  const saveSchedule = async (scanId: string, schedule: Partial<ScanSchedule>) => {
-    setSavingId(scanId)
-    try {
-      const userId = user?.id
-      if (!userId) {
-        alert('User ID not available')
-        setSavingId(null)
-        return
-      }
-
-      const existingSchedule = schedules[scanId]
-      
-      console.log('[AutomatedScans] Saving schedule for scan:', scanId, 'user:', userId, 'existing:', !!existingSchedule)
-
-      if (existingSchedule) {
-        // Update existing schedule
-        console.log('[AutomatedScans] Updating existing schedule:', existingSchedule.id)
-        const { error } = await supabase
-          .from('scan_schedules')
-          .update({
-            ...schedule,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSchedule.id)
-
-        if (error) throw error
-      } else {
-        // Create new schedule
-        console.log('[AutomatedScans] Creating new schedule for scan:', scanId)
-        const { error } = await supabase
-          .from('scan_schedules')
-          .insert({
-            user_id: userId,
-            scan_id: scanId,
-            ...schedule,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-
-        if (error) {
-          console.error('[AutomatedScans] Insert error details:', error)
-          throw error
-        }
-        
-        console.log('[AutomatedScans] Schedule saved successfully')
-      }
-
-      // Refresh data to show updated schedule
-      await fetchScansAndSchedules()
-      
-      // Show success message (optional)
-      // alert('Schedule saved successfully!')
-    } catch (error) {
-      console.error('Error saving schedule:', error)
-      alert('Failed to save schedule')
-    } finally {
-      setSavingId(null)
-    }
-  }
-
-  const deleteSchedule = async (scanId: string) => {
-    if (!confirm('Delete this automated scan schedule?')) return
-
-    const schedule = schedules[scanId]
-    if (!schedule) return
-
-    try {
-      const { error } = await supabase
-        .from('scan_schedules')
-        .delete()
-        .eq('id', schedule.id)
-
-      if (error) throw error
-
-      await fetchScansAndSchedules()
-    } catch (error) {
-      console.error('Error deleting schedule:', error)
-      alert('Failed to delete schedule')
-    }
-  }
-
   if (loading) {
     return <div className="text-slate-400">Loading automated scans...</div>
   }
@@ -250,9 +168,8 @@ export default function AutomatedScansSettings() {
           key={scan.id}
           scan={scan}
           schedule={schedules[scan.id]}
-          onSave={(schedule) => saveSchedule(scan.id, schedule)}
-          onDelete={() => deleteSchedule(scan.id)}
-          saving={savingId === scan.id}
+          userId={user?.id || ''}
+          onScheduleUpdate={fetchScansAndSchedules}
         />
       ))}
     </div>
@@ -262,38 +179,167 @@ export default function AutomatedScansSettings() {
 function ScheduleCard({ 
   scan, 
   schedule, 
-  onSave, 
-  onDelete, 
-  saving 
+  userId,
+  onScheduleUpdate
 }: {
   scan: Scan
   schedule?: ScanSchedule
-  onSave: (schedule: Partial<ScanSchedule>) => void
-  onDelete: () => void
-  saving: boolean
+  userId: string
+  onScheduleUpdate: () => Promise<void>
 }) {
+  // Initialize state from existing schedule or defaults
   const [enabled, setEnabled] = useState(schedule?.enabled ?? false)
   const [frequency, setFrequency] = useState(schedule?.frequency || 'weekly')
   const [dayOfWeek, setDayOfWeek] = useState(schedule?.day_of_week ?? 1)
   const [dayOfMonth, setDayOfMonth] = useState(schedule?.day_of_month ?? 1)
-  const [hour, setHour] = useState(schedule?.hour ?? 6)
+  const [hour, setHour] = useState(schedule?.hour ?? 9)
   const [minute, setMinute] = useState(schedule?.minute ?? 0)
   const [timezone, setTimezone] = useState(schedule?.timezone || 'America/New_York')
+  const [saving, setSaving] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [lastSavedState, setLastSavedState] = useState<any>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
 
-  const handleSave = () => {
-    onSave({
-      enabled,
-      frequency,
-      day_of_week: frequency === 'weekly' ? dayOfWeek : undefined,
-      day_of_month: frequency === 'monthly' ? dayOfMonth : undefined,
-      hour,
-      minute,
-      timezone
-    })
+  // Update local state when schedule prop changes
+  useEffect(() => {
+    if (schedule) {
+      setEnabled(schedule.enabled)
+      setFrequency(schedule.frequency)
+      setDayOfWeek(schedule.day_of_week ?? 1)
+      setDayOfMonth(schedule.day_of_month ?? 1)
+      setHour(schedule.hour)
+      setMinute(schedule.minute)
+      setTimezone(schedule.timezone)
+      
+      // Save the initial state
+      setLastSavedState({
+        enabled: schedule.enabled,
+        frequency: schedule.frequency,
+        day_of_week: schedule.day_of_week,
+        day_of_month: schedule.day_of_month,
+        hour: schedule.hour,
+        minute: schedule.minute,
+        timezone: schedule.timezone
+      })
+    }
+  }, [schedule])
+
+  // Check if there are unsaved changes
+  useEffect(() => {
+    if (lastSavedState) {
+      const currentState = {
+        enabled,
+        frequency,
+        day_of_week: frequency === 'weekly' ? dayOfWeek : undefined,
+        day_of_month: frequency === 'monthly' ? dayOfMonth : undefined,
+        hour,
+        minute,
+        timezone
+      }
+      
+      const hasUnsavedChanges = JSON.stringify(currentState) !== JSON.stringify(lastSavedState)
+      setHasChanges(hasUnsavedChanges)
+    } else if (!schedule) {
+      // If no schedule exists yet, any state is a change
+      setHasChanges(true)
+    }
+  }, [enabled, frequency, dayOfWeek, dayOfMonth, hour, minute, timezone, lastSavedState, schedule])
+
+  const handleToggle = async (newEnabled: boolean) => {
+    setEnabled(newEnabled)
+    
+    // Auto-save toggle changes if schedule exists
+    if (schedule) {
+      await saveSchedule({ ...getCurrentScheduleData(), enabled: newEnabled })
+    }
+  }
+
+  const getCurrentScheduleData = () => ({
+    enabled,
+    frequency,
+    day_of_week: frequency === 'weekly' ? dayOfWeek : undefined,
+    day_of_month: frequency === 'monthly' ? dayOfMonth : undefined,
+    hour,
+    minute,
+    timezone
+  })
+
+  const saveSchedule = async (data?: any) => {
+    setSaving(true)
+    try {
+      const scheduleData = data || getCurrentScheduleData()
+      
+      if (schedule) {
+        // Update existing schedule
+        console.log('[AutomatedScans] Updating schedule:', schedule.id)
+        const { error } = await supabase
+          .from('scan_schedules')
+          .update({
+            ...scheduleData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', schedule.id)
+
+        if (error) throw error
+      } else {
+        // Create new schedule
+        console.log('[AutomatedScans] Creating new schedule for scan:', scan.id)
+        const { error } = await supabase
+          .from('scan_schedules')
+          .insert({
+            user_id: userId,
+            scan_id: scan.id,
+            ...scheduleData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (error) {
+          console.error('[AutomatedScans] Insert error details:', error)
+          throw error
+        }
+      }
+      
+      // Update saved state
+      setLastSavedState(scheduleData)
+      setHasChanges(false)
+      
+      // Show success feedback
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
+      
+      // Refresh parent data
+      await onScheduleUpdate()
+      
+    } catch (error) {
+      console.error('Error saving schedule:', error)
+      alert('Failed to save schedule')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteSchedule = async () => {
+    if (!schedule) return
+    if (!confirm('Delete this automated scan schedule?')) return
+
+    try {
+      const { error } = await supabase
+        .from('scan_schedules')
+        .delete()
+        .eq('id', schedule.id)
+
+      if (error) throw error
+
+      await onScheduleUpdate()
+    } catch (error) {
+      console.error('Error deleting schedule:', error)
+      alert('Failed to delete schedule')
+    }
   }
 
   const getNextRunText = () => {
-    if (!enabled) return 'Not scheduled'
+    if (!enabled) return 'Disabled'
     
     // If we have a saved schedule with next_run_at, use it
     if (schedule?.next_run_at) {
@@ -345,12 +391,12 @@ function ScheduleCard({
           )}
         </div>
         
-        {/* Toggle */}
+        {/* Toggle with auto-save */}
         <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
             checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
+            onChange={(e) => handleToggle(e.target.checked)}
             className="sr-only peer"
           />
           <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -466,43 +512,73 @@ function ScheduleCard({
         </div>
       </div>
 
-      {enabled && (
-        <div className="mb-4 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
-          <p className="text-indigo-300 text-sm">
-            <Calendar className="w-4 h-4 inline mr-2" />
-            Next run: <strong>{getNextRunText()}</strong>
-          </p>
+      {/* Status display */}
+      <div className={`mb-4 p-3 rounded-lg ${
+        enabled 
+          ? 'bg-indigo-500/10 border border-indigo-500/30' 
+          : 'bg-slate-800 border border-slate-700'
+      }`}>
+        <p className={`text-sm ${enabled ? 'text-indigo-300' : 'text-slate-400'}`}>
+          <Calendar className="w-4 h-4 inline mr-2" />
+          Next run: <strong>{getNextRunText()}</strong>
+        </p>
+      </div>
+
+      {/* Success message */}
+      {showSuccess && (
+        <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-2">
+          <Check className="w-4 h-4 text-green-400" />
+          <p className="text-green-400 text-sm">Schedule saved successfully!</p>
         </div>
       )}
 
       {/* Actions */}
       <div className="flex gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg font-medium transition"
-        >
-          {saving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              Save Schedule
-            </>
-          )}
-        </button>
+        {/* Save button - only show when there are changes */}
+        {hasChanges && (
+          <button
+            onClick={() => saveSchedule()}
+            disabled={saving || !enabled}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes
+              </>
+            )}
+          </button>
+        )}
         
+        {/* Delete button - only show if schedule exists */}
         {schedule && (
           <button
-            onClick={onDelete}
+            onClick={deleteSchedule}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
             Delete
           </button>
+        )}
+        
+        {/* Info text when no changes */}
+        {!hasChanges && enabled && (
+          <div className="flex-1 flex items-center justify-center text-sm text-slate-400">
+            <Check className="w-4 h-4 text-green-400 mr-2" />
+            Schedule is active and saved
+          </div>
+        )}
+        
+        {/* Info text when disabled */}
+        {!enabled && !hasChanges && (
+          <div className="flex-1 flex items-center justify-center text-sm text-slate-500">
+            Enable the toggle to activate automated scanning
+          </div>
         )}
       </div>
     </div>
