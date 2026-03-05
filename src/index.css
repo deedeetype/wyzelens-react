@@ -2,63 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark Theme (Default) */
 :root {
-  --bg-primary: #0f172a;    /* slate-900 */
-  --bg-secondary: #020617;  /* slate-950 */
-  --bg-card: #0f172a;       /* slate-900 */
-  --bg-input: #1e293b;      /* slate-800 */
-  --border-primary: #1e293b; /* slate-800 */
-  --border-secondary: #334155; /* slate-700 */
+  --bg-primary: #0f172a;
+  --bg-secondary: #020617;
+  --bg-card: #0f172a;
+  --bg-card-secondary: #1e293b;
+  --bg-input: #1e293b;
+  --bg-accent: #4c1d95;
+  --border-primary: #1e293b;
+  --border-secondary: #334155;
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8; /* slate-400 */
-  --text-muted: #64748b;    /* slate-500 */
-  --text-body: #cbd5e1;     /* slate-300 */
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-body: #cbd5e1;
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #a78bfa;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
 }
 
-/* Light Theme Variants */
+/* Light Theme Variant: Corporate Minimal (Clean Gray) */
 .light-theme[data-light-variant="minimal"] {
-  --bg-primary: #FAFAFA;
+  --bg-primary: #FFFFFF;
   --bg-secondary: #F5F5F5;
   --bg-card: #FFFFFF;
-  --bg-input: #FFFFFF;
+  --bg-card-secondary: #FAFAFA;
+  --bg-input: #FAFAFA;
+  --bg-accent: #E0E7FF;
   --border-primary: #E5E5E5;
   --border-secondary: #D4D4D8;
   --text-primary: #18181B;
-  --text-secondary: #71717A;
+  --text-secondary: #52525B;
   --text-muted: #A1A1AA;
-  --text-body: #52525B;
+  --text-body: #3F3F46;
+  --accent-primary: #4F46E5;
+  --accent-secondary: #6366F1;
+  --success: #16A34A;
+  --warning: #EA580C;
+  --danger: #DC2626;
+  --info: #2563EB;
 }
 
+/* Light Theme Variant: Soft Tech (Blue-Gray) */
 .light-theme[data-light-variant="soft"] {
   --bg-primary: #FFFFFF;
   --bg-secondary: #F9FAFB;
   --bg-card: #FFFFFF;
-  --bg-input: #F3F4F6;
+  --bg-card-secondary: #F3F4F6;
+  --bg-input: #F9FAFB;
+  --bg-accent: #DBEAFE;
   --border-primary: #E5E7EB;
   --border-secondary: #D1D5DB;
   --text-primary: #111827;
-  --text-secondary: #6B7280;
+  --text-secondary: #4B5563;
   --text-muted: #9CA3AF;
   --text-body: #374151;
+  --accent-primary: #0EA5E9;
+  --accent-secondary: #38BDF8;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
 }
 
+/* Light Theme Variant: Premium Neutral (Warm Beige) */
 .light-theme[data-light-variant="premium"] {
   --bg-primary: #FDFCFB;
   --bg-secondary: #F7F6F4;
   --bg-card: #FFFFFF;
+  --bg-card-secondary: #FAF9F7;
   --bg-input: #F5F4F1;
+  --bg-accent: #FEF3C7;
   --border-primary: #E8E6E3;
   --border-secondary: #D4D2CE;
   --text-primary: #1A1816;
-  --text-secondary: #6C6A66;
+  --text-secondary: #57544F;
   --text-muted: #9B9894;
-  --text-body: #3D3B37;
-}
-
-/* Dark Theme Variants (default for now, can be expanded later) */
-.dark-theme[data-dark-variant="default"],
-:root {
-  /* Keep existing dark theme as default */
+  --text-body: #44403C;
+  --accent-primary: #D97706;
+  --accent-secondary: #F59E0B;
+  --success: #15803D;
+  --warning: #EA580C;
+  --danger: #DC2626;
+  --info: #0284C7;
 }
 
 @layer base {
@@ -68,24 +97,27 @@
   }
 }
 
-/* Light theme utility overrides using specificity */
-.light-theme .min-h-screen.bg-slate-950 {
+/* ===== GLOBAL THEME OVERRIDES ===== */
+
+/* Backgrounds */
+.light-theme .min-h-screen.bg-slate-950,
+.light-theme .bg-slate-950 {
   background-color: var(--bg-secondary) !important;
+}
+
+.light-theme .bg-slate-900 {
+  background-color: var(--bg-card) !important;
+}
+
+.light-theme .bg-slate-800,
+.light-theme .bg-slate-800\/50 {
+  background-color: var(--bg-card-secondary) !important;
 }
 
 /* Sidebar */
 .light-theme aside {
   background-color: var(--bg-primary) !important;
   border-color: var(--border-primary) !important;
-}
-
-/* Cards and panels */
-.light-theme .bg-slate-900 {
-  background-color: var(--bg-card) !important;
-}
-.light-theme .bg-slate-800,
-.light-theme .bg-slate-800\/50 {
-  background-color: var(--bg-input) !important;
 }
 
 /* Borders */
@@ -95,8 +127,11 @@
 .light-theme .border-slate-700 {
   border-color: var(--border-secondary) !important;
 }
+.light-theme .border-t.border-slate-800 {
+  border-color: var(--border-primary) !important;
+}
 
-/* Text */
+/* Text Colors */
 .light-theme .text-white {
   color: var(--text-primary) !important;
 }
@@ -109,8 +144,11 @@
 .light-theme .text-slate-500 {
   color: var(--text-muted) !important;
 }
+.light-theme .text-slate-600 {
+  color: var(--text-muted) !important;
+}
 
-/* Inputs & selects */
+/* Inputs & Selects */
 .light-theme select,
 .light-theme input[type="text"],
 .light-theme input[type="email"],
@@ -125,9 +163,9 @@
   color: var(--text-primary) !important;
 }
 
-/* Hover states */
+/* Hover States */
 .light-theme .hover\:bg-slate-800:hover {
-  background-color: var(--bg-input) !important;
+  background-color: var(--bg-card-secondary) !important;
 }
 .light-theme .hover\:text-white:hover {
   color: var(--text-primary) !important;
@@ -136,17 +174,91 @@
   border-color: var(--border-secondary) !important;
 }
 
-/* Modal backdrop */
+/* Modal Backdrop */
 .light-theme .bg-black\/50 {
   background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Placeholder text */
+/* Placeholder Text */
 .light-theme .placeholder-slate-600::placeholder {
   color: var(--text-muted) !important;
 }
 
-/* Bottom border in sidebar */
-.light-theme .border-t.border-slate-800 {
-  border-color: var(--border-primary) !important;
+/* ===== ACCENT COLORS (Buttons, Links, Highlights) ===== */
+
+/* Purple/Indigo accents → Use theme accent colors */
+.light-theme .bg-purple-500,
+.light-theme .bg-purple-600,
+.light-theme .bg-indigo-600 {
+  background-color: var(--accent-primary) !important;
+}
+
+.light-theme .hover\:bg-purple-600:hover,
+.light-theme .hover\:bg-indigo-700:hover {
+  background-color: var(--accent-secondary) !important;
+}
+
+.light-theme .text-purple-400,
+.light-theme .text-indigo-400 {
+  color: var(--accent-primary) !important;
+}
+
+.light-theme .border-purple-500,
+.light-theme .border-indigo-500 {
+  border-color: var(--accent-primary) !important;
+}
+
+/* Status Colors */
+.light-theme .text-green-400,
+.light-theme .text-green-500 {
+  color: var(--success) !important;
+}
+
+.light-theme .text-amber-400,
+.light-theme .text-yellow-400 {
+  color: var(--warning) !important;
+}
+
+.light-theme .text-red-400,
+.light-theme .text-red-500 {
+  color: var(--danger) !important;
+}
+
+.light-theme .text-blue-400,
+.light-theme .text-blue-500 {
+  color: var(--info) !important;
+}
+
+/* Background status colors */
+.light-theme .bg-green-500\/10 {
+  background-color: color-mix(in srgb, var(--success) 10%, transparent) !important;
+}
+
+.light-theme .bg-amber-500\/10 {
+  background-color: color-mix(in srgb, var(--warning) 10%, transparent) !important;
+}
+
+.light-theme .bg-red-500\/10 {
+  background-color: color-mix(in srgb, var(--danger) 10%, transparent) !important;
+}
+
+.light-theme .bg-blue-500\/10 {
+  background-color: color-mix(in srgb, var(--info) 10%, transparent) !important;
+}
+
+/* Border status colors */
+.light-theme .border-green-500\/30 {
+  border-color: color-mix(in srgb, var(--success) 30%, transparent) !important;
+}
+
+.light-theme .border-amber-500\/30 {
+  border-color: color-mix(in srgb, var(--warning) 30%, transparent) !important;
+}
+
+.light-theme .border-red-500\/30 {
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent) !important;
+}
+
+.light-theme .border-blue-500\/30 {
+  border-color: color-mix(in srgb, var(--info) 30%, transparent) !important;
 }
