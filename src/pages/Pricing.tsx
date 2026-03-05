@@ -91,13 +91,24 @@ export default function Pricing() {
               WyzeLens
             </Link>
             <div className="flex items-center gap-4">
-              <Link to="/sign-in" className="text-gray-300 hover:text-white transition">Sign In</Link>
-              <Link 
-                to="/sign-up"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-2 rounded-lg font-semibold transition"
-              >
-                Get Started
-              </Link>
+              {user ? (
+                <Link 
+                  to="/dashboard"
+                  className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-lg font-semibold transition"
+                >
+                  Back to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link to="/sign-in" className="text-gray-300 hover:text-white transition">Sign In</Link>
+                  <Link 
+                    to="/sign-up"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-2 rounded-lg font-semibold transition"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
