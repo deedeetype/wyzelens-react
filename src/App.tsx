@@ -4,9 +4,8 @@ import { SettingsProvider } from '@/contexts/SettingsContext'
 import { AlertsProvider } from '@/contexts/AlertsContext'
 import { NewsFeedProvider } from '@/contexts/NewsFeedContext'
 import Dashboard from '@/pages/Dashboard'
-import LandingPage from '@/pages/LandingPage'
+import NewLandingPage from '@/pages/NewLandingPage'
 import Pricing from '@/pages/Pricing'
-import Demo from '@/pages/Demo'
 import Onboarding from '@/pages/Onboarding'
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
@@ -33,7 +32,7 @@ function RootRedirect() {
   if (isSignedIn) return <Navigate to="/dashboard" replace />
   
   // Otherwise show landing page
-  return <LandingPage />
+  return <NewLandingPage />
 }
 
 function App() {
@@ -47,7 +46,6 @@ function App() {
                 <Route path="/" element={<RootRedirect />} />
                 <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" forceRedirectUrl="/dashboard" />} />
                 <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" forceRedirectUrl="/dashboard" />} />
-                <Route path="/demo" element={<Demo />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route
                   path="/onboarding"
