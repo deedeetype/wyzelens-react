@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@clerk/react'
-import { Clock, Calendar, RefreshCw, Save, Trash2, Plus, Check } from 'lucide-react'
+import { useSubscription } from '@/hooks/useSubscription'
+import { Clock, Calendar, RefreshCw, Save, Trash2, Plus, Check, Lock } from 'lucide-react'
+import UpgradeModal from './UpgradeModal'
 
 interface ScanSchedule {
   id: string
@@ -50,9 +52,11 @@ const TIMEZONES = [
 export default function AutomatedScansSettings() {
   const { user } = useUser()
   const { getToken } = useAuth()
+  const { plan } = useSubscription()
   const [scans, setScans] = useState<Scan[]>([])
   const [schedules, setSchedules] = useState<Record<string, ScanSchedule>>({})
   const [loading, setLoading] = useState(true)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -172,8 +176,17 @@ export default function AutomatedScansSettings() {
           schedule={schedules[scan.id]}
           userId={user?.id || ''}
           onScheduleUpdate={fetchScansAndSchedules}
+          userPlan={plan}
+          onUpgradeNeeded={() => setShowUpgradeModal(true)}
         />
       ))}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature="Automated scan scheduling"
+      />
     </div>
   )
 }
@@ -182,12 +195,16 @@ function ScheduleCard({
   scan, 
   schedule, 
   userId,
-  onScheduleUpdate
+  onScheduleUpdate,
+  userPlan,
+  onUpgradeNeeded
 }: {
   scan: Scan
   schedule?: ScanSchedule
   userId: string
   onScheduleUpdate: () => Promise<void>
+  userPlan: string
+  onUpgradeNeeded: () => void
 }) {
   // Initialize state from existing schedule or defaults
   const [enabled, setEnabled] = useState(schedule?.enabled ?? false)
@@ -415,16 +432,41 @@ function ScheduleCard({
           <label className="block text-sm font-medium text-slate-400 mb-2">
             Frequency
           </label>
-          <select
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value as any)}
-            disabled={!enabled}
-            className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
-          >
-            <option value="hourly">Hourly (Pro+)</option>
-            <option value="daily">Daily (Starter+)</option>
-            <option value="weekly">Weekly (Free+)</option>
-          </select>
+          <div className="relative">
+            <select
+              value={frequency}
+              onChange={(e) => {
+                const newFreq = e.target.value as 'hourly' | 'daily' | 'weekly'
+                
+                // Check plan restrictions
+                if (newFreq === 'hourly' && !['pro', 'business', 'enterprise'].includes(userPlan)) {
+                  onUpgradeNeeded()
+                  return
+                }
+                if (newFreq === 'daily' && userPlan === 'free') {
+                  onUpgradeNeeded()
+                  return
+                }
+                
+                setFrequency(newFreq)
+              }}
+              disabled={!enabled}
+              className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50 appearance-none"
+            >
+              <option value="weekly">Weekly (Free+)</option>
+              <option value="daily" disabled={userPlan === 'free'}>
+                Daily (Starter+) {userPlan === 'free' ? '🔒' : ''}
+              </option>
+              <option value="hourly" disabled={!['pro', 'business', 'enterprise'].includes(userPlan)}>
+                Hourly (Pro+) {!['pro', 'business', 'enterprise'].includes(userPlan) ? '🔒' : ''}
+              </option>
+            </select>
+            {!enabled && (
+              <div className="absolute inset-0 bg-slate-900/50 rounded-lg flex items-center justify-center pointer-events-none">
+                <Lock className="w-4 h-4 text-slate-600" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Day selector */}
