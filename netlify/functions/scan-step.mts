@@ -1,5 +1,5 @@
 /**
- * PulseIntel Multi-Step Scan Function
+ * WyzeLens Multi-Step Scan Function
  * Each step runs independently within Netlify's timeout
  * Frontend orchestrates: step1 → step2 → step3 → step4
  */

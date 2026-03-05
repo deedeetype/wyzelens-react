@@ -452,10 +452,10 @@ export default function Dashboard() {
       }`}>
         <div className="p-6 flex items-center justify-between">
           <Link to="/" className={`text-2xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent ${sidebarCollapsed ? 'hidden' : ''}`}>
-            PulseIntel
+            WyzeLens
           </Link>
           {sidebarCollapsed && (
-            <Link to="/" className="text-xl font-bold text-indigo-400">PI</Link>
+            <Link to="/" className="text-xl font-bold text-indigo-400">WL</Link>
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
