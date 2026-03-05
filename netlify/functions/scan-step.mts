@@ -140,7 +140,7 @@ JSON: {"company_name": "X", "industry": "Y", "description": "1-2 sentence descri
 }
 
 // Step 0: Create scan record OR reuse existing profile (incremental model)
-async function stepInit(industry: string, companyUrl?: string, companyName?: string, userId?: string) {
+async function stepInit(industry: string, companyUrl?: string, companyName?: string, userId?: string, isScheduled?: boolean) {
   // Require authentication - no fallback to demo_user
   if (!userId) {
     console.error('[stepInit] No userId provided - authentication required')
@@ -150,8 +150,100 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   // Use Clerk ID directly (TEXT, no conversion needed)
   const actualUserId = userId
   
-  // ✅ CHECK PLAN LIMITS (server-side enforcement)
-  console.log('[stepInit] Checking plan limits...')
+  // Check for existing completed profile with same industry (and optionally same company_url)
+  let queryUrl = `${SUPABASE_URL}/rest/v1/scans?user_id=eq.${actualUserId}&industry=eq.${encodeURIComponent(industry)}&status=eq.completed&order=created_at.desc&limit=1`
+  
+  // If company_url is provided, filter by it as well
+  if (companyUrl) {
+    queryUrl += `&company_url=eq.${encodeURIComponent(companyUrl)}`
+  } else {
+    // If no company_url, match scans with NULL company_url (industry-only profiles)
+    queryUrl += `&company_url=is.null`
+  }
+  
+  const res = await fetch(queryUrl, {
+    headers: {
+      'apikey': SUPABASE_KEY!,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    }
+  })
+  const existingProfiles = await res.json()
+  
+  console.log(`[stepInit] Looking for existing ${industry} profile (companyUrl: ${companyUrl || 'null'})`)
+  console.log(`[stepInit] Found ${existingProfiles.length} existing profiles`)
+  
+  if (existingProfiles && existingProfiles.length > 0) {
+    // REUSE existing profile - this is a REFRESH, not a new scan
+    const existingScan = existingProfiles[0]
+    console.log(`[stepInit] REUSING existing scan ${existingScan.id} (refresh count: ${existingScan.refresh_count || 0})`)
+    
+    // ✅ CHECK REFRESH LIMITS (only for manual refreshes, not scheduled)
+    if (!isScheduled) {
+      console.log('[stepInit] Checking refresh limits for manual refresh...')
+      
+      // Get user subscription
+      const subRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/user_subscriptions?user_id=eq.${actualUserId}&order=created_at.desc&limit=1`,
+        {
+          headers: {
+            'apikey': SUPABASE_KEY!,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          }
+        }
+      )
+      
+      const subs = await subRes.json()
+      const plan = subs?.[0]?.plan || 'free'
+      console.log(`[stepInit] User plan: ${plan}`)
+      
+      // Check last refresh time
+      const lastRefresh = existingScan.last_refreshed_at ? new Date(existingScan.last_refreshed_at) : null
+      const now = new Date()
+      
+      if (lastRefresh) {
+        const hoursSinceRefresh = (now.getTime() - lastRefresh.getTime()) / (1000 * 60 * 60)
+        
+        // Refresh limits by plan
+        const refreshLimits: Record<string, { hours: number, label: string }> = {
+          free: { hours: 168, label: 'weekly' },      // 7 days
+          starter: { hours: 24, label: 'daily' },      // 1 day
+          pro: { hours: 1, label: 'hourly' },          // 1 hour
+          business: { hours: 1, label: 'hourly' },     // 1 hour
+          enterprise: { hours: 1, label: 'hourly' }    // 1 hour
+        }
+        
+        const limit = refreshLimits[plan] || refreshLimits.free
+        
+        if (hoursSinceRefresh < limit.hours) {
+          const hoursRemaining = Math.ceil(limit.hours - hoursSinceRefresh)
+          console.error(`[stepInit] Refresh limit reached: last refresh ${hoursSinceRefresh.toFixed(1)}h ago, need ${limit.hours}h`)
+          throw new Error(`Refresh limit reached. Your ${plan} plan allows ${limit.label} refreshes. Please wait ${hoursRemaining} hour${hoursRemaining > 1 ? 's' : ''} or upgrade for more frequent updates.`)
+        }
+        
+        console.log(`[stepInit] Refresh allowed: ${hoursSinceRefresh.toFixed(1)}h since last refresh (limit: ${limit.hours}h)`)
+      }
+    } else {
+      console.log('[stepInit] Scheduled refresh - skipping manual refresh limits')
+    }
+    // ✅ END REFRESH LIMITS CHECK
+    
+    await supabasePatch('scans', `id=eq.${existingScan.id}`, {
+      status: 'running',
+      last_refreshed_at: new Date().toISOString(),
+      refresh_count: (existingScan.refresh_count || 0) + 1,
+      updated_at: new Date().toISOString()
+    })
+    
+    return { 
+      scanId: existingScan.id, 
+      isRefresh: true,
+      userId: actualUserId
+    }
+  }
+  
+  // NEW SCAN - Check profile limits
+  console.log(`[stepInit] Creating NEW scan for ${industry}`)
+  console.log('[stepInit] Checking plan limits for new profile...')
   
   // Get user subscription
   const subRes = await fetch(
@@ -183,7 +275,7 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   const activeScans = scans?.length || 0
   console.log(`[stepInit] Active scans: ${activeScans}`)
   
-  // Plan limits
+  // Plan limits for NEW profiles
   const limits: Record<string, number> = {
     free: 1,
     starter: 1,
@@ -200,51 +292,8 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   }
   
   console.log(`[stepInit] Limit check passed: ${activeScans}/${limit}`)
-  // ✅ END PLAN LIMITS CHECK
-  
-  // Check for existing completed profile with same industry (and optionally same company_url)
-  let queryUrl = `${SUPABASE_URL}/rest/v1/scans?user_id=eq.${actualUserId}&industry=eq.${encodeURIComponent(industry)}&status=eq.completed&order=created_at.desc&limit=1`
-  
-  // If company_url is provided, filter by it as well
-  if (companyUrl) {
-    queryUrl += `&company_url=eq.${encodeURIComponent(companyUrl)}`
-  } else {
-    // If no company_url, match scans with NULL company_url (industry-only profiles)
-    queryUrl += `&company_url=is.null`
-  }
-  
-  const res = await fetch(queryUrl, {
-    headers: {
-      'apikey': SUPABASE_KEY!,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-    }
-  })
-  const existingProfiles = await res.json()
-  
-  console.log(`[stepInit] Looking for existing ${industry} profile (companyUrl: ${companyUrl || 'null'})`)
-  console.log(`[stepInit] Found ${existingProfiles.length} existing profiles`)
-  
-  if (existingProfiles && existingProfiles.length > 0) {
-    // REUSE existing profile - update status and timestamps
-    const existingScan = existingProfiles[0]
-    console.log(`[stepInit] REUSING existing scan ${existingScan.id} (refresh count: ${existingScan.refresh_count || 0})`)
-    
-    await supabasePatch('scans', `id=eq.${existingScan.id}`, {
-      status: 'running',
-      last_refreshed_at: new Date().toISOString(),
-      refresh_count: (existingScan.refresh_count || 0) + 1,
-      updated_at: new Date().toISOString()
-    })
-    
-    return { 
-      scanId: existingScan.id, 
-      isRefresh: true,
-      userId: actualUserId
-    }
-  }
   
   // Create new profile
-  console.log(`[stepInit] Creating NEW scan for ${industry}`)
   const [scan] = await supabasePost('scans', {
     user_id: actualUserId,
     industry,
