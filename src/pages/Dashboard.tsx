@@ -390,6 +390,21 @@ export default function Dashboard() {
           setScanProgress('')
           setScanProgressPercent(0)
         }, 1500)
+      } else if (error.message?.includes('Plan limit reached')) {
+        // Handle plan limit error
+        setScanProgress('❌ ' + error.message)
+        setScanProgressPercent(0)
+        console.error('Plan limit reached:', error)
+        
+        // Show upgrade modal after a delay
+        setTimeout(() => {
+          setIsScanning(false)
+          setShowScanModal(false)
+          setScanProgress('')
+          setScanProgressPercent(0)
+          setUpgradeReason(error.message)
+          setShowUpgradeModal(true)
+        }, 2000)
       } else {
         setScanProgress('❌ Scan failed. Please try again.')
         setScanProgressPercent(0)

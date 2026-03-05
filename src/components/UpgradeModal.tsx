@@ -48,15 +48,15 @@ export default function UpgradeModal({ isOpen, onClose, reason, feature }: Upgra
           <PlanCard
             icon={<Zap className="w-5 h-5" />}
             name="Starter"
-            price="$15"
-            features={['Daily auto-refresh', '1 manual refresh/day', '30 days history']}
+            price="$49"
+            features={['1 industry profile', 'Daily auto-refresh', '1 manual refresh/day', '30 days history']}
             highlighted={false}
           />
           <PlanCard
             icon={<Rocket className="w-5 h-5" />}
             name="Professional"
-            price="$49"
-            features={['3 profiles', 'Unlimited refresh', 'Export data', 'Email alerts']}
+            price="$149"
+            features={['3 industry profiles', 'Unlimited refresh', 'Export data', 'Priority alerts']}
             highlighted={true}
           />
         </div>
