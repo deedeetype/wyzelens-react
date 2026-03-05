@@ -179,9 +179,9 @@ export default function NewLandingPage() {
         </div>
       </section>
 
-      {/* Features Section with Parallax */}
+      {/* Features Section - Stacked Layout */}
       <section id="features" className="relative py-32 px-4">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Competitive Intelligence,
@@ -192,12 +192,9 @@ export default function NewLandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-32 px-4">
-            {/* Feature 1 */}
-            <div 
-              className="order-2 md:order-1"
-              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * -0.3 : 0}px)` }}
-            >
+          {/* Feature 1 - Stacked */}
+          <div className="mb-32 space-y-8">
+            <div>
               <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-4">
                 <Target className="w-4 h-4 text-indigo-400" />
                 <span className="text-sm text-indigo-300">Automated Discovery</span>
@@ -222,10 +219,7 @@ export default function NewLandingPage() {
               </ul>
             </div>
             
-            <div 
-              className="order-1 md:order-2"
-              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * 0.3 : 0}px)` }}
-            >
+            <div>
               <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
                 <div className="space-y-3">
                   {[
@@ -252,11 +246,34 @@ export default function NewLandingPage() {
             </div>
           </div>
 
-          {/* Feature 2 */}
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-32 px-4">
-            <div 
-              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * -0.3 : 0}px)` }}
-            >
+          {/* Feature 2 - Stacked */}
+          <div className="mb-32 space-y-8">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-4">
+                <Lightbulb className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-purple-300">AI-Powered Insights</span>
+              </div>
+              <h3 className="text-3xl font-bold mb-4">Strategic Intelligence in Seconds</h3>
+              <p className="text-gray-400 text-lg mb-6">
+                Transform raw data into actionable intelligence. Our AI analyzes thousands of data points 
+                to surface threats, opportunities, and trends that matter to your business.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'AI-generated strategic insights',
+                  'Threat & opportunity detection',
+                  'Confidence scoring on predictions',
+                  'Actionable recommendations'
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle2 className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
               <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
                 <div className="space-y-4">
                   {[
@@ -298,41 +315,11 @@ export default function NewLandingPage() {
                 </div>
               </div>
             </div>
-
-            <div 
-              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * 0.3 : 0}px)` }}
-            >
-              <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-4">
-                <Lightbulb className="w-4 h-4 text-purple-400" />
-                <span className="text-sm text-purple-300">AI-Powered Insights</span>
-              </div>
-              <h3 className="text-3xl font-bold mb-4">Strategic Intelligence in Seconds</h3>
-              <p className="text-gray-400 text-lg mb-6">
-                Transform raw data into actionable intelligence. Our AI analyzes thousands of data points 
-                to surface threats, opportunities, and trends that matter to your business.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  'AI-generated strategic insights',
-                  'Threat & opportunity detection',
-                  'Confidence scoring on predictions',
-                  'Actionable recommendations'
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-300">
-                    <CheckCircle2 className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
 
-          {/* Feature 3 */}
-          <div className="grid md:grid-cols-2 gap-12 items-center px-4">
-            <div 
-              className="order-2 md:order-1"
-              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * -0.3 : 0}px)` }}
-            >
+          {/* Feature 3 - Stacked */}
+          <div className="space-y-8">
+            <div>
               <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-2 mb-4">
                 <Bell className="w-4 h-4 text-red-400" />
                 <span className="text-sm text-red-300">Intelligent Alerts</span>
@@ -357,10 +344,7 @@ export default function NewLandingPage() {
               </ul>
             </div>
 
-            <div 
-              className="order-1 md:order-2"
-              style={{ transform: `translateX(${window.innerWidth > 768 ? parallaxOffset * 0.3 : 0}px)` }}
-            >
+            <div>
               <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
                 <div className="space-y-3">
                   {[
