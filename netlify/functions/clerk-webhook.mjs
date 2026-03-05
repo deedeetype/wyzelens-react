@@ -89,29 +89,42 @@ export const handler = async (event) => {
     console.log(`Processing ${eventType} for user:`, id, email);
 
     try {
-      // Upsert user
-      const { data, error } = await supabase
+      // Check if user already exists
+      const { data: existingUser } = await supabase
         .from('users')
-        .upsert({
-          clerk_id: id,
-          email: email,
-          name: `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0],
-        }, {
-          onConflict: 'clerk_id'
-        });
+        .select('id')
+        .eq('clerk_id', id)
+        .single();
 
-      if (error) {
-        console.error('Error upserting user:', error);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: 'Failed to upsert user', details: error.message }),
-        };
+      if (existingUser) {
+        // Update existing user
+        const { error } = await supabase
+          .from('users')
+          .update({
+            email: email,
+            name: `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0],
+          })
+          .eq('clerk_id', id);
+
+        if (error) throw error;
+        console.log('User updated successfully:', id);
+      } else {
+        // Insert new user
+        const { error } = await supabase
+          .from('users')
+          .insert({
+            clerk_id: id,
+            email: email,
+            name: `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0],
+          });
+
+        if (error) throw error;
+        console.log('User created successfully:', id);
       }
 
-      console.log('User upserted successfully:', id);
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: 'User upserted successfully', user_id: id }),
+        body: JSON.stringify({ message: 'User processed successfully', user_id: id }),
       };
     } catch (error) {
       console.error('Unexpected error:', error);
