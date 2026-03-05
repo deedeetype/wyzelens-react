@@ -120,7 +120,8 @@ export const handler: Handler = async (event) => {
         }
         
         const actualScanId = step1Result.scanId;
-        console.log(`[Cron] ${scanId} - Step 1 complete, actual scanId: ${actualScanId}`);
+        const isRefresh = step1Result.isRefresh;
+        console.log(`[Cron] ${scanId} - Step 1 complete, actual scanId: ${actualScanId}, isRefresh: ${isRefresh}`);
         
         // Log the refresh start
         await supabase
@@ -134,62 +135,109 @@ export const handler: Handler = async (event) => {
             started_at: now.toISOString()
           });
         
-        // Step 2: Competitors
-        console.log(`[Cron] ${actualScanId} - Step 2: Competitors`);
-        const step2Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            step: '2',
-            scanId: actualScanId,
-            industry: scan.industry,
-            userId: scan.user_id
-          })
-        });
-        
-        const step2Result = await step2Response.json();
-        if (!step2Result.success) {
-          throw new Error(`Step 2 failed: ${step2Result.error || 'Unknown error'}`);
+        if (isRefresh) {
+          // REFRESH MODE: Skip competitors (step 2), only update news + insights/alerts
+          console.log(`[Cron] ${actualScanId} - REFRESH MODE: Skipping competitors, fetching news + insights/alerts`);
+          
+          // Step 4: News (fetch first to get fresh data)
+          console.log(`[Cron] ${actualScanId} - Step 4: News`);
+          const step4Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: '4',
+              scanId: actualScanId,
+              industry: scan.industry,
+              userId: scan.user_id
+            })
+          });
+          
+          const step4Result = await step4Response.json();
+          if (!step4Result.success) {
+            throw new Error(`Step 4 failed: ${step4Result.error || 'Unknown error'}`);
+          }
+          console.log(`[Cron] ${actualScanId} - Step 4 complete (news refreshed)`);
+          
+          // Step 3: Insights + Alerts (analyze fresh news)
+          console.log(`[Cron] ${actualScanId} - Step 3: Insights + Alerts`);
+          const step3Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: '3',
+              scanId: actualScanId,
+              industry: scan.industry,
+              userId: scan.user_id
+            })
+          });
+          
+          const step3Result = await step3Response.json();
+          if (!step3Result.success) {
+            throw new Error(`Step 3 failed: ${step3Result.error || 'Unknown error'}`);
+          }
+          console.log(`[Cron] ${actualScanId} - Step 3 complete (insights/alerts updated)`);
+          
+        } else {
+          // NEW SCAN MODE: Execute all steps
+          console.log(`[Cron] ${actualScanId} - NEW SCAN MODE: Executing all 4 steps`);
+          
+          // Step 2: Competitors
+          console.log(`[Cron] ${actualScanId} - Step 2: Competitors`);
+          const step2Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: '2',
+              scanId: actualScanId,
+              industry: scan.industry,
+              userId: scan.user_id
+            })
+          });
+          
+          const step2Result = await step2Response.json();
+          if (!step2Result.success) {
+            throw new Error(`Step 2 failed: ${step2Result.error || 'Unknown error'}`);
+          }
+          console.log(`[Cron] ${actualScanId} - Step 2 complete`);
+          
+          // Step 3: Insights + Alerts
+          console.log(`[Cron] ${actualScanId} - Step 3: Insights + Alerts`);
+          const step3Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: '3',
+              scanId: actualScanId,
+              industry: scan.industry,
+              userId: scan.user_id
+            })
+          });
+          
+          const step3Result = await step3Response.json();
+          if (!step3Result.success) {
+            throw new Error(`Step 3 failed: ${step3Result.error || 'Unknown error'}`);
+          }
+          console.log(`[Cron] ${actualScanId} - Step 3 complete`);
+          
+          // Step 4: News
+          console.log(`[Cron] ${actualScanId} - Step 4: News`);
+          const step4Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: '4',
+              scanId: actualScanId,
+              industry: scan.industry,
+              userId: scan.user_id
+            })
+          });
+          
+          const step4Result = await step4Response.json();
+          if (!step4Result.success) {
+            throw new Error(`Step 4 failed: ${step4Result.error || 'Unknown error'}`);
+          }
+          console.log(`[Cron] ${actualScanId} - Step 4 complete`);
         }
-        console.log(`[Cron] ${actualScanId} - Step 2 complete`);
-        
-        // Step 3: Insights + Alerts
-        console.log(`[Cron] ${actualScanId} - Step 3: Insights + Alerts`);
-        const step3Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            step: '3',
-            scanId: actualScanId,
-            industry: scan.industry,
-            userId: scan.user_id
-          })
-        });
-        
-        const step3Result = await step3Response.json();
-        if (!step3Result.success) {
-          throw new Error(`Step 3 failed: ${step3Result.error || 'Unknown error'}`);
-        }
-        console.log(`[Cron] ${actualScanId} - Step 3 complete`);
-        
-        // Step 4: News
-        console.log(`[Cron] ${actualScanId} - Step 4: News`);
-        const step4Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            step: '4',
-            scanId: actualScanId,
-            industry: scan.industry,
-            userId: scan.user_id
-          })
-        });
-        
-        const step4Result = await step4Response.json();
-        if (!step4Result.success) {
-          throw new Error(`Step 4 failed: ${step4Result.error || 'Unknown error'}`);
-        }
-        console.log(`[Cron] ${actualScanId} - Step 4 complete`);
         
         // Mark scan as completed
         await supabase
