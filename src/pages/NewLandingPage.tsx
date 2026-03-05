@@ -2,18 +2,40 @@ import { Link } from 'react-router-dom'
 import { 
   Shield, Zap, Target, TrendingUp, Bell, Lightbulb, 
   Eye, BarChart3, Globe, Sparkles, ArrowRight, 
-  CheckCircle2, Menu, X, ChevronDown
+  CheckCircle2, Menu, X, ChevronDown, Newspaper, RefreshCw
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export default function NewLandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrollY, setScrollY] = useState(0)
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set())
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Intersection Observer for fade-in animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set(prev).add(entry.target.id))
+          }
+        })
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -100px 0px' }
+    )
+
+    Object.values(sectionRefs.current).forEach((ref) => {
+      if (ref) observer.observe(ref)
+    })
+
+    return () => observer.disconnect()
   }, [])
 
   const parallaxOffset = scrollY * 0.5
@@ -192,8 +214,12 @@ export default function NewLandingPage() {
             </p>
           </div>
 
-          {/* Feature 1 - Stacked */}
-          <div className="mb-32 space-y-8">
+          {/* Feature 1 - Competitor Discovery */}
+          <div 
+            id="feature-1"
+            ref={(el) => (sectionRefs.current['feature-1'] = el)}
+            className={`mb-32 space-y-8 fade-in-section ${visibleSections.has('feature-1') ? 'animate-fade-in-up' : ''}`}
+          >
             <div>
               <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-4">
                 <Target className="w-4 h-4 text-indigo-400" />
@@ -246,8 +272,12 @@ export default function NewLandingPage() {
             </div>
           </div>
 
-          {/* Feature 2 - Stacked */}
-          <div className="mb-32 space-y-8">
+          {/* Feature 2 - AI Insights */}
+          <div 
+            id="feature-2"
+            ref={(el) => (sectionRefs.current['feature-2'] = el)}
+            className={`mb-32 space-y-8 fade-in-section ${visibleSections.has('feature-2') ? 'animate-fade-in-up delay-100' : ''}`}
+          >
             <div>
               <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-4">
                 <Lightbulb className="w-4 h-4 text-purple-400" />
@@ -317,8 +347,12 @@ export default function NewLandingPage() {
             </div>
           </div>
 
-          {/* Feature 3 - Stacked */}
-          <div className="space-y-8">
+          {/* Feature 3 - Intelligent Alerts */}
+          <div 
+            id="feature-3"
+            ref={(el) => (sectionRefs.current['feature-3'] = el)}
+            className={`mb-32 space-y-8 fade-in-section ${visibleSections.has('feature-3') ? 'animate-fade-in-up delay-200' : ''}`}
+          >
             <div>
               <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-2 mb-4">
                 <Bell className="w-4 h-4 text-red-400" />
@@ -378,6 +412,88 @@ export default function NewLandingPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 4 - News & Auto-Refresh */}
+          <div 
+            id="feature-4"
+            ref={(el) => (sectionRefs.current['feature-4'] = el)}
+            className={`space-y-8 fade-in-section ${visibleSections.has('feature-4') ? 'animate-fade-in-up delay-300' : ''}`}
+          >
+            <div>
+              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-4">
+                <Newspaper className="w-4 h-4 text-blue-400" />
+                <span className="text-sm text-blue-300">Always Up-to-Date</span>
+              </div>
+              <h3 className="text-3xl font-bold mb-4">Stay Fresh with Automated Monitoring</h3>
+              <p className="text-gray-400 text-lg mb-6">
+                Never work with stale data. WyzeLens continuously scans the web for the latest news, 
+                product launches, and market movements—keeping your intelligence fresh 24/7.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'Real-time news aggregation from 100+ sources',
+                  'Automated daily/weekly profile refreshes',
+                  'Smart deduplication and ranking',
+                  'Date-grouped news feed for easy scanning'
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-gray-300">
+                    <CheckCircle2 className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
+              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-4 md:p-6 shadow-2xl overflow-hidden">
+                <div className="space-y-3">
+                  {[
+                    { 
+                      title: 'Tesla announces new battery technology',
+                      source: 'TechCrunch',
+                      time: '2 hours ago',
+                      tag: 'Product'
+                    },
+                    { 
+                      title: 'Rivian secures $2B partnership with Amazon',
+                      source: 'Bloomberg',
+                      time: '5 hours ago',
+                      tag: 'Funding'
+                    },
+                    { 
+                      title: 'BYD expands European market presence',
+                      source: 'Reuters',
+                      time: '1 day ago',
+                      tag: 'Market'
+                    }
+                  ].map((news, i) => (
+                    <div key={i} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                      <div className="flex items-start gap-3">
+                        <Newspaper className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-semibold mb-1">{news.title}</div>
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span>{news.source}</span>
+                            <span>•</span>
+                            <span>{news.time}</span>
+                            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full ml-2">
+                              {news.tag}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Refresh indicator */}
+                  <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700 flex items-center gap-3">
+                    <RefreshCw className="w-4 h-4 text-indigo-400 animate-spin" />
+                    <span className="text-sm text-slate-400">Auto-refresh scheduled: Tomorrow 9:00 AM</span>
+                  </div>
                 </div>
               </div>
             </div>
