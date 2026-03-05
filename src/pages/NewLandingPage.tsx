@@ -10,7 +10,7 @@ export default function NewLandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrollY, setScrollY] = useState(0)
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set())
-  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -217,7 +217,7 @@ export default function NewLandingPage() {
           {/* Feature 1 - Competitor Discovery */}
           <div 
             id="feature-1"
-            ref={(el) => (sectionRefs.current['feature-1'] = el)}
+            ref={(el) => { sectionRefs.current['feature-1'] = el }}
             className={`mb-32 space-y-8 fade-in-section ${visibleSections.has('feature-1') ? 'animate-fade-in-up' : ''}`}
           >
             <div>
@@ -275,7 +275,7 @@ export default function NewLandingPage() {
           {/* Feature 2 - AI Insights */}
           <div 
             id="feature-2"
-            ref={(el) => (sectionRefs.current['feature-2'] = el)}
+            ref={(el) => { sectionRefs.current['feature-2'] = el }}
             className={`mb-32 space-y-8 fade-in-section ${visibleSections.has('feature-2') ? 'animate-fade-in-up delay-100' : ''}`}
           >
             <div>
@@ -350,7 +350,7 @@ export default function NewLandingPage() {
           {/* Feature 3 - Intelligent Alerts */}
           <div 
             id="feature-3"
-            ref={(el) => (sectionRefs.current['feature-3'] = el)}
+            ref={(el) => { sectionRefs.current['feature-3'] = el }}
             className={`mb-32 space-y-8 fade-in-section ${visibleSections.has('feature-3') ? 'animate-fade-in-up delay-200' : ''}`}
           >
             <div>
@@ -420,7 +420,7 @@ export default function NewLandingPage() {
           {/* Feature 4 - News & Auto-Refresh */}
           <div 
             id="feature-4"
-            ref={(el) => (sectionRefs.current['feature-4'] = el)}
+            ref={(el) => { sectionRefs.current['feature-4'] = el }}
             className={`space-y-8 fade-in-section ${visibleSections.has('feature-4') ? 'animate-fade-in-up delay-300' : ''}`}
           >
             <div>
