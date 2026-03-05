@@ -440,24 +440,30 @@ function ScheduleCard({
                 
                 // Check plan restrictions
                 if (newFreq === 'hourly' && !['pro', 'business', 'enterprise'].includes(userPlan)) {
+                  e.preventDefault()
                   onUpgradeNeeded()
+                  // Reset to current value
+                  e.target.value = frequency
                   return
                 }
                 if (newFreq === 'daily' && userPlan === 'free') {
+                  e.preventDefault()
                   onUpgradeNeeded()
+                  // Reset to current value
+                  e.target.value = frequency
                   return
                 }
                 
                 setFrequency(newFreq)
               }}
               disabled={!enabled}
-              className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50 appearance-none"
+              className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
             >
               <option value="weekly">Weekly (Free+)</option>
-              <option value="daily" disabled={userPlan === 'free'}>
+              <option value="daily">
                 Daily (Starter+) {userPlan === 'free' ? '🔒' : ''}
               </option>
-              <option value="hourly" disabled={!['pro', 'business', 'enterprise'].includes(userPlan)}>
+              <option value="hourly">
                 Hourly (Pro+) {!['pro', 'business', 'enterprise'].includes(userPlan) ? '🔒' : ''}
               </option>
             </select>
