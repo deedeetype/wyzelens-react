@@ -89,9 +89,9 @@ export const handler = async (event) => {
     console.log(`Processing ${eventType} for user:`, id, email);
 
     try {
-      // Upsert profile
+      // Upsert user
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .upsert({
           user_id: id,
           email: email,
@@ -104,17 +104,17 @@ export const handler = async (event) => {
         });
 
       if (error) {
-        console.error('Error upserting profile:', error);
+        console.error('Error upserting user:', error);
         return {
           statusCode: 500,
-          body: JSON.stringify({ error: 'Failed to upsert profile', details: error.message }),
+          body: JSON.stringify({ error: 'Failed to upsert user', details: error.message }),
         };
       }
 
-      console.log('Profile upserted successfully:', id);
+      console.log('User upserted successfully:', id);
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: 'Profile upserted successfully', user_id: id }),
+        body: JSON.stringify({ message: 'User upserted successfully', user_id: id }),
       };
     } catch (error) {
       console.error('Unexpected error:', error);
