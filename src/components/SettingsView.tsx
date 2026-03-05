@@ -444,9 +444,11 @@ export default function SettingsView() {
       )}
 
       {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-      )}
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)}
+        feature="Advanced scan preferences"
+      />
     </div>
   )
 }
