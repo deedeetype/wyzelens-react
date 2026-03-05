@@ -100,7 +100,7 @@ export default function AutomatedScansSettings() {
       }
         
         // Fetch schedules
-        const { data: schedulesData, error: schedulesError } = await fetch(
+        const schedulesResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/scan_schedules?user_id=eq.${user.id}`,
           {
             headers: {
@@ -108,11 +108,14 @@ export default function AutomatedScansSettings() {
               'Authorization': `Bearer ${token}`,
             }
           }
-        ).then(res => res.json())
+        )
         
+        const schedulesData = await schedulesResponse.json()
+        
+        console.log('[AutomatedScans] Schedules response:', schedulesResponse.status)
         console.log('[AutomatedScans] Schedules data:', schedulesData)
         
-        if (!schedulesError && schedulesData && Array.isArray(schedulesData)) {
+        if (schedulesResponse.ok && Array.isArray(schedulesData)) {
           // Convert schedules to map by scan_id
           const schedulesMap: Record<string, ScanSchedule> = {}
           schedulesData.forEach((schedule: ScanSchedule) => {
@@ -248,10 +251,8 @@ function ScheduleCard({
   const handleToggle = async (newEnabled: boolean) => {
     setEnabled(newEnabled)
     
-    // Auto-save toggle changes if schedule exists
-    if (schedule) {
-      await saveSchedule({ ...getCurrentScheduleData(), enabled: newEnabled })
-    }
+    // Always save when toggling (create if doesn't exist, update if exists)
+    await saveSchedule({ ...getCurrentScheduleData(), enabled: newEnabled })
   }
 
   const getCurrentScheduleData = () => ({
