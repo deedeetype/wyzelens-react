@@ -14,6 +14,8 @@ AI-powered competitive intelligence platform built with React + Vite.
 ## 🏷️ Version Tags
 
 - `v1.0.0-react-stable` - First stable React version with all core features working
+- `v1.1.0-react-limits` - Version with working plan limits and upgrade modal
+- `v1.2.0-react-complete` - Complete version with all features functional (Stripe, automated scans, etc.)
 
 ## 🛠️ Tech Stack
 
