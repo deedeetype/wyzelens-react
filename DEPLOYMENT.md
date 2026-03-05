@@ -106,9 +106,12 @@ POE_API_KEY=...
 2. **Configure > Domains**
    - Authorized domain: `wyzelens.com`
 
-3. **Configure > Webhooks**
+3. **Configure > Webhooks** 🔄 RECREATED 2026-03-05
    - Endpoint: `https://wyzelens.com/.netlify/functions/clerk-webhook`
    - Events: `user.created`, `user.updated`, `user.deleted` ✅
+   - Status: Active ✅
+   - **Important:** Webhook was recreated clean to remove legacy event cache
+   - Description: "WyzeLens Production Webhook (React) - Clean v1.4.1"
 
 ### Supabase Dashboard Settings
 1. **Authentication > URL Configuration**
@@ -121,6 +124,9 @@ POE_API_KEY=...
 ### Stripe Dashboard Settings
 1. **Developers > Webhooks**
    - Endpoint URL: `https://wyzelens.com/.netlify/functions/stripe-webhook`
+   - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+   - Status: Active ✅
+   - Verified working: Updates `user_subscriptions` table correctly
 
 2. **Product Settings**
    - Success URL: `https://wyzelens.com/dashboard?success=true`
@@ -180,20 +186,44 @@ git push origin main --force
 - Currently `.mts` (TypeScript module)
 - May need conversion to `.mjs` for better Netlify Functions compatibility
 - Uses `SUPABASE_SERVICE_KEY` env var
+- Working correctly for now
 
-### Webhook Behavior
+### Webhook Behavior ✅ RESOLVED
 - Clerk sends both `user.created` AND `user.updated` on signup
-- Current logic checks for existing user to prevent duplicates
+- Fixed: Improved existence check to prevent duplicates (.limit(1) instead of .single())
 - User deletion triggers CASCADE DELETE in all related tables
+- **Webhook cache issue resolved:** Recreated webhook clean (2026-03-05)
 
 ### Database Constraints
 - `clerk_id` is the primary foreign key reference (TEXT type)
 - `id` (UUID) is internal primary key only
 - All user_id columns in related tables must be TEXT type
+- Recommended: Add UNIQUE constraint on email if not already present:
+  ```sql
+  ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE (email);
+  ```
+
+### Testing Checklist ✅ VALIDATED
+- [x] New user signup → Single user created in both Clerk and Supabase
+- [x] Multiple signup attempts → No duplicates
+- [x] Scan execution → No phantom users
+- [x] Stripe payment → Subscription updates correctly
+- [x] User profile update → Syncs to Supabase
+- [x] User deletion → Full CASCADE cleanup
 
 ---
 
 ## 📝 Migration History
+
+### v1.4.1 - Webhooks Stable (2026-03-05) ✅ CURRENT
+- **STABLE PRODUCTION VERSION** - All webhooks functional
+- Recreated Clerk webhook (clean, no legacy cache)
+- Fixed duplicate user creation on signup retry
+- Improved existence check (.single() → .limit(1))
+- Verified Stripe webhook working correctly
+- All user lifecycle events working (create/update/delete)
+- Subscription payments updating user_subscriptions table
+- Full end-to-end testing validated
 
 ### v1.4.0 - Domain Migration (2026-03-05)
 - Migrated from `wyzelensreact.netlify.app` to `wyzelens.com`
