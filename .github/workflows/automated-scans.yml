@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Check and Execute Due Scans
         run: |
-          curl -X POST https://wyzelens-react.netlify.app/.netlify/functions/run-scheduled-scans \
+          curl -X POST https://wyzelens.com/.netlify/functions/run-scheduled-scans \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{
