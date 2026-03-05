@@ -1,48 +1,44 @@
-/**
- * useSubscription Hook
- * Fetches and manages user subscription state
- */
-
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/react'
-import { getUserPlan, getSubscriptionInfo, PlanName } from '@/lib/subscription'
+import { getUserPlan, getPlanLimits, type PlanName } from '@/lib/subscription'
 
 export function useSubscription() {
   const { user } = useUser()
   const [plan, setPlan] = useState<PlanName>('free')
-  const [subscription, setSubscription] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchSubscription() {
+    async function loadPlan() {
       if (!user?.id) {
+        setPlan('free')
         setLoading(false)
         return
       }
 
       try {
-        const [userPlan, subInfo] = await Promise.all([
-          getUserPlan(user.id),
-          getSubscriptionInfo(user.id)
-        ])
-
+        const userPlan = await getUserPlan(user.id)
         setPlan(userPlan)
-        setSubscription(subInfo)
       } catch (error) {
-        console.error('Error fetching subscription:', error)
+        console.error('Error loading plan:', error)
+        setPlan('free')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchSubscription()
+    loadPlan()
   }, [user?.id])
+
+  const limits = getPlanLimits(plan)
 
   return {
     plan,
-    subscription,
+    limits,
     loading,
     isFreePlan: plan === 'free',
-    isPaidPlan: plan !== 'free'
+    isStarterPlan: plan === 'starter',
+    isProPlan: plan === 'pro',
+    isBusinessPlan: plan === 'business',
+    isEnterprisePlan: plan === 'enterprise',
   }
 }

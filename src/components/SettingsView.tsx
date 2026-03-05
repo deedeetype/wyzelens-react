@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useUser } from '@clerk/react'
-import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw } from 'lucide-react'
+import { useSubscription } from '@/hooks/useSubscription'
+import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw, Lock } from 'lucide-react'
 import AutomatedScansSettings from './AutomatedScansSettings'
+import UpgradeModal from './UpgradeModal'
 import { INDUSTRIES } from '@/constants/industries'
 
 const REGIONS = ['Global', 'North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East & Africa']
@@ -13,20 +15,42 @@ const INDUSTRIES_WITH_EMPTY = ['', ...INDUSTRIES]
 export default function SettingsView() {
   const { user } = useUser()
   const { settings, updateSettings, updateProfile, updateScanPreferences, t } = useSettings()
+  const { plan, limits } = useSubscription()
   const [saved, setSaved] = useState(false)
   const [watchlistInput, setWatchlistInput] = useState('')
   const [activeSection, setActiveSection] = useState<'profile' | 'scan' | 'notifications' | 'automated'>('profile')
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   // Load onboarding data into settings on mount
   useEffect(() => {
     if (user?.unsafeMetadata) {
       const meta = user.unsafeMetadata as any
-      if (meta.companyName && !settings.profile.company) {
+      const onboardingData = meta.onboardingData
+      
+      // Load profile data
+      if (onboardingData?.companyName && !settings.profile.company) {
         updateProfile({ 
-          company: meta.companyName,
-          companyUrl: meta.companyUrl || '',
-          defaultIndustry: meta.industry || ''
+          company: onboardingData.companyName,
+          companyUrl: onboardingData.companyUrl || '',
+          defaultIndustry: onboardingData.industry || ''
         })
+      }
+      
+      // Load scan preferences
+      if (onboardingData && Object.keys(settings.scanPreferences).length === 3) {
+        const newPrefs: any = {}
+        
+        if (onboardingData.competitorCount) {
+          newPrefs.maxCompetitors = parseInt(onboardingData.competitorCount)
+        }
+        
+        if (onboardingData.regions && onboardingData.regions.length > 0) {
+          newPrefs.targetRegions = onboardingData.regions
+        }
+        
+        if (Object.keys(newPrefs).length > 0) {
+          updateScanPreferences(newPrefs)
+        }
       }
     }
   }, [user])
@@ -272,20 +296,41 @@ export default function SettingsView() {
           {/* Max Competitors */}
           <div>
             <label className={labelClass}>{t('settings.max_competitors')}</label>
-            <div className="flex gap-2">
-              {[5, 10, 15, 20].map(n => (
-                <button
-                  key={n}
-                  onClick={() => { updateScanPreferences({ maxCompetitors: n }); showSaved() }}
-                  className={`px-5 py-2 rounded-lg border text-sm font-medium transition ${
-                    settings.scanPreferences.maxCompetitors === n
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 5, requiredPlan: 'free' },
+                { value: 10, requiredPlan: 'free' },
+                { value: 15, requiredPlan: 'pro' },
+                { value: 20, requiredPlan: 'pro' },
+                { value: 30, requiredPlan: 'pro', label: '30 (Pro)' },
+                { value: 100, requiredPlan: 'business', label: '100 (Business)' }
+              ].filter(opt => opt.value <= limits.competitors || opt.value === settings.scanPreferences.maxCompetitors)
+               .map(opt => {
+                const isLocked = opt.value > limits.competitors
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      if (isLocked) {
+                        setShowUpgradeModal(true)
+                      } else {
+                        updateScanPreferences({ maxCompetitors: opt.value })
+                        showSaved()
+                      }
+                    }}
+                    className={`px-5 py-2 rounded-lg border text-sm font-medium transition flex items-center gap-2 ${
+                      settings.scanPreferences.maxCompetitors === opt.value
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : isLocked
+                        ? 'bg-slate-800/50 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-500 cursor-not-allowed'
+                        : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                    }`}
+                  >
+                    {opt.label || opt.value}
+                    {isLocked && <Lock className="w-3 h-3" />}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -299,23 +344,35 @@ export default function SettingsView() {
             </label>
             <div className="flex gap-2">
               {([
-                { value: 'manual' as const, label: settings.language === 'fr' ? 'Manuel' : 'Manual' },
-                { value: 'daily' as const, label: settings.language === 'fr' ? 'Quotidien' : 'Daily', pro: true },
-                { value: 'weekly' as const, label: settings.language === 'fr' ? 'Hebdomadaire' : 'Weekly', pro: true },
-              ]).map(freq => (
-                <button
-                  key={freq.value}
-                  onClick={() => { updateScanPreferences({ scanFrequency: freq.value }); showSaved() }}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg border text-sm font-medium transition ${
-                    settings.scanPreferences.scanFrequency === freq.value
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
-                  }`}
-                >
-                  {freq.label}
-                  {freq.pro && <span className="text-[10px] px-1 py-0.5 bg-amber-500/20 text-amber-400 rounded">PRO</span>}
-                </button>
-              ))}
+                { value: 'manual' as const, label: 'Manual', minPlan: 'free' },
+                { value: 'daily' as const, label: 'Daily (Auto)', minPlan: 'starter' },
+                { value: 'weekly' as const, label: 'Weekly (Auto)', minPlan: 'starter' },
+              ]).map(freq => {
+                const isLocked = !limits.refreshAuto && freq.value !== 'manual'
+                return (
+                  <button
+                    key={freq.value}
+                    onClick={() => {
+                      if (isLocked) {
+                        setShowUpgradeModal(true)
+                      } else {
+                        updateScanPreferences({ scanFrequency: freq.value })
+                        showSaved()
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg border text-sm font-medium transition ${
+                      settings.scanPreferences.scanFrequency === freq.value
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : isLocked
+                        ? 'bg-slate-800/50 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-500 cursor-not-allowed'
+                        : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                    }`}
+                  >
+                    {freq.label}
+                    {isLocked && <Lock className="w-3 h-3" />}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -384,6 +441,11 @@ export default function SettingsView() {
       {/* Automated Scans Section */}
       {activeSection === 'automated' && (
         <AutomatedScansSettings />
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
       )}
     </div>
   )
