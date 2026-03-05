@@ -175,9 +175,15 @@ export default function AutomatedScansSettings() {
           console.error('[AutomatedScans] Insert error details:', error)
           throw error
         }
+        
+        console.log('[AutomatedScans] Schedule saved successfully')
       }
 
+      // Refresh data to show updated schedule
       await fetchScansAndSchedules()
+      
+      // Show success message (optional)
+      // alert('Schedule saved successfully!')
     } catch (error) {
       console.error('Error saving schedule:', error)
       alert('Failed to save schedule')
@@ -287,15 +293,44 @@ function ScheduleCard({
   }
 
   const getNextRunText = () => {
-    if (!schedule?.next_run_at) return 'Not scheduled'
-    return new Date(schedule.next_run_at).toLocaleString('en-US', {
+    if (!enabled) return 'Not scheduled'
+    
+    // If we have a saved schedule with next_run_at, use it
+    if (schedule?.next_run_at) {
+      return new Date(schedule.next_run_at).toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: timezone
+      })
+    }
+    
+    // Otherwise, calculate approximate next run
+    const now = new Date()
+    const next = new Date()
+    next.setHours(hour, minute, 0, 0)
+    
+    if (frequency === 'daily') {
+      if (next <= now) next.setDate(next.getDate() + 1)
+    } else if (frequency === 'weekly') {
+      const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
+      next.setDate(now.getDate() + (daysUntilNext || 7))
+      if (next <= now) next.setDate(next.getDate() + 7)
+    } else if (frequency === 'monthly') {
+      next.setDate(dayOfMonth)
+      if (next <= now) next.setMonth(next.getMonth() + 1)
+    }
+    
+    return next.toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       timeZone: timezone
-    })
+    }) + ' (estimated)'
   }
 
   return (
