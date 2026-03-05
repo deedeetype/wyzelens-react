@@ -18,7 +18,7 @@ interface Props {
 export default function InsightsView({ insights, loading, archiveInsightOptimistic, refetch, scanId }: Props) {
   const { archiveInsight, unarchiveInsight, deleteInsight } = useNewsActions()
   const { archivedInsights, archivedCount, loading: archivedLoading, fetchArchived, fetchArchivedCount } = useArchivedInsights(scanId)
-  const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
   const [showArchived, setShowArchived] = useState(false)
 
@@ -137,105 +137,101 @@ export default function InsightsView({ insights, loading, archiveInsightOptimist
         </div>
       </div>
 
-      {/* Detail Panel */}
-      {selectedInsight && (
-        <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-xl p-6 mb-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                <TypeIcon type={selectedInsight.type} />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">{selectedInsight.title}</h3>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className={`px-2 py-1 rounded-full text-xs border ${typeStyle(selectedInsight.type)}`}>
-                    {selectedInsight.type}
-                  </span>
-                  {selectedInsight.impact && (
-                    <span className={`text-xs ${impactStyle(selectedInsight.impact)}`}>
-                      Impact: {selectedInsight.impact}
+      {/* Insights List with Accordion */}
+      <div className="space-y-3">
+        {filtered.map((insight) => {
+          const isExpanded = expandedId === insight.id
+          
+          return (
+            <div
+              key={insight.id}
+              className={`bg-slate-900 border rounded-xl overflow-hidden transition-all ${
+                isExpanded ? 'border-indigo-500/50' : 'border-slate-800'
+              }`}
+            >
+              {/* Insight Header - Always Visible */}
+              <div
+                onClick={() => setExpandedId(isExpanded ? null : insight.id)}
+                className={`flex items-start gap-4 p-4 cursor-pointer transition ${
+                  isExpanded ? 'bg-slate-800' : 'hover:bg-slate-800/50'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
+                  <TypeIcon type={insight.type} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-semibold">{insight.title}</h3>
+                  {!isExpanded && (
+                    <p className="text-sm text-slate-400 mt-1 line-clamp-2">{insight.description}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs border ${typeStyle(insight.type)}`}>
+                      {insight.type}
                     </span>
-                  )}
+                    {insight.impact && (
+                      <span className={`text-xs ${impactStyle(insight.impact)}`}>
+                        {insight.impact} impact
+                      </span>
+                    )}
+                    {insight.confidence && (
+                      <span className="text-xs text-slate-500">{Math.round(insight.confidence * 100)}% confidence</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ActionMenu
+                    itemId={insight.id}
+                    onArchive={showArchived ? handleUnarchive : handleArchive}
+                    onDelete={handleDelete}
+                    deleteConfirmTitle="Delete Insight?"
+                    deleteConfirmMessage="This AI-generated insight will be permanently removed."
+                    isArchived={showArchived}
+                  />
+                  <button className="text-slate-400 hover:text-white">
+                    <svg className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-            </div>
-            <button onClick={() => setSelectedInsight(null)} className="text-slate-400 hover:text-white">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <p className="text-slate-300 mt-4 leading-relaxed">{selectedInsight.description}</p>
 
-          {selectedInsight.confidence && (
-            <div className="flex items-center gap-3 mt-4">
-              <span className="text-xs text-slate-400">Confidence:</span>
-              <div className="flex-1 h-2 bg-slate-700 rounded-full max-w-xs">
-                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${selectedInsight.confidence * 100}%` }} />
-              </div>
-              <span className="text-sm text-indigo-300 font-medium">{Math.round(selectedInsight.confidence * 100)}%</span>
-            </div>
-          )}
-          
-          {selectedInsight.action_items && selectedInsight.action_items.length > 0 && (
-            <div className="mt-5">
-              <h4 className="text-sm font-medium text-slate-400 mb-2">Recommended Actions:</h4>
-              <ul className="space-y-2">
-                {selectedInsight.action_items.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                    <span className="text-indigo-400 mt-0.5">→</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div className="p-4 pt-0 border-t border-slate-800">
+                  <div className="bg-slate-800/50 rounded-lg p-4 mt-4">
+                    <p className="text-slate-300 leading-relaxed">{insight.description}</p>
 
-      {/* Insights Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {filtered.map((insight) => (
-          <div
-            key={insight.id}
-            className={`p-5 rounded-xl border transition relative ${
-              selectedInsight?.id === insight.id
-                ? 'bg-slate-800 border-indigo-500/50'
-                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
-                <TypeIcon type={insight.type} />
-              </div>
-              <div 
-                onClick={() => setSelectedInsight(insight)}
-                className="flex-1 cursor-pointer">
-                <h3 className="text-white font-semibold mb-2">{insight.title}</h3>
-                <p className="text-slate-400 text-sm line-clamp-3">{insight.description}</p>
-                <div className="flex items-center gap-3 mt-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs border ${typeStyle(insight.type)}`}>
-                    {insight.type}
-                  </span>
-                  {insight.confidence && (
-                    <span className="text-xs text-slate-500">{Math.round(insight.confidence * 100)}% confidence</span>
-                  )}
+                    {insight.confidence && (
+                      <div className="flex items-center gap-3 mt-4">
+                        <span className="text-xs text-slate-400">Confidence:</span>
+                        <div className="flex-1 h-2 bg-slate-700 rounded-full max-w-xs">
+                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${insight.confidence * 100}%` }} />
+                        </div>
+                        <span className="text-sm text-indigo-300 font-medium">{Math.round(insight.confidence * 100)}%</span>
+                      </div>
+                    )}
+                    
+                    {insight.action_items && insight.action_items.length > 0 && (
+                      <div className="mt-5">
+                        <h4 className="text-sm font-medium text-slate-400 mb-2">Recommended Actions:</h4>
+                        <ul className="space-y-2">
+                          {insight.action_items.map((item, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                              <span className="text-indigo-400 mt-0.5">→</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="absolute top-4 right-4">
-                <ActionMenu
-                  itemId={insight.id}
-                  onArchive={showArchived ? handleUnarchive : handleArchive}
-                  onDelete={handleDelete}
-                  deleteConfirmTitle="Delete Insight?"
-                  deleteConfirmMessage="This AI-generated insight will be permanently removed."
-                  isArchived={showArchived}
-                />
-              </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
         {filtered.length === 0 && (
-          <div className="text-slate-400 text-center py-12 col-span-2">No insights found</div>
+          <div className="text-slate-400 text-center py-12">No insights found</div>
         )}
       </div>
     </div>
