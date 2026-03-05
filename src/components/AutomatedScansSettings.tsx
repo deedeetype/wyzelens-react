@@ -74,28 +74,31 @@ export default function AutomatedScansSettings() {
       
       // Get Clerk token for auth
       const token = await getToken({ template: 'supabase' })
+      console.log('[AutomatedScans] Token obtained:', token ? 'yes' : 'no')
       
-      // Create authenticated Supabase client
-      const authClient = supabase
-      
-      if (token) {
-        // If we have a token, use it
-        const { data: scansData, error: scansError } = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/scans?user_id=eq.${user.id}&status=eq.completed&order=created_at.desc`,
-          {
-            headers: {
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-              'Authorization': `Bearer ${token}`,
-            }
+      // Try direct fetch first to debug
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/scans?user_id=eq.${user.id}&status=eq.completed&order=created_at.desc`,
+        {
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+            'Authorization': `Bearer ${token}`,
           }
-        ).then(res => res.json())
-        
-        if (scansError) {
-          console.error('[AutomatedScans] Error fetching scans:', scansError)
-        } else {
-          console.log('[AutomatedScans] Found scans:', scansData?.length || 0)
-          setScans(scansData || [])
         }
+      )
+      
+      console.log('[AutomatedScans] Response status:', response.status)
+      const scansData = await response.json()
+      console.log('[AutomatedScans] Response data:', scansData)
+      
+      if (response.ok && Array.isArray(scansData)) {
+        console.log('[AutomatedScans] Found scans:', scansData.length)
+        console.log('[AutomatedScans] First scan:', scansData[0])
+        setScans(scansData)
+      } else {
+        console.error('[AutomatedScans] Failed to fetch scans:', scansData)
+        setScans([])
+      }
         
         // Fetch schedules
         const { data: schedulesData, error: schedulesError } = await fetch(
@@ -108,15 +111,19 @@ export default function AutomatedScansSettings() {
           }
         ).then(res => res.json())
         
-        if (!schedulesError && schedulesData) {
+        console.log('[AutomatedScans] Schedules data:', schedulesData)
+        
+        if (!schedulesError && schedulesData && Array.isArray(schedulesData)) {
           // Convert schedules to map by scan_id
           const schedulesMap: Record<string, ScanSchedule> = {}
           schedulesData.forEach((schedule: ScanSchedule) => {
             schedulesMap[schedule.scan_id] = schedule
           })
           setSchedules(schedulesMap)
+        } else {
+          console.log('[AutomatedScans] No schedules found or error')
+          setSchedules({})
         }
-      }
       
     } catch (error) {
       console.error('[AutomatedScans] Error:', error)
