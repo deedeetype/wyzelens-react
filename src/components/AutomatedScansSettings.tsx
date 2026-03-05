@@ -9,9 +9,8 @@ import { Clock, Calendar, RefreshCw, Save, Trash2, Plus, Check } from 'lucide-re
 interface ScanSchedule {
   id: string
   scan_id: string
-  frequency: 'daily' | 'weekly' | 'monthly'
+  frequency: 'hourly' | 'daily' | 'weekly'
   day_of_week?: number
-  day_of_month?: number
   hour: number
   minute: number
   timezone: string
@@ -259,8 +258,7 @@ function ScheduleCard({
     enabled,
     frequency,
     day_of_week: frequency === 'weekly' ? dayOfWeek : undefined,
-    day_of_month: frequency === 'monthly' ? dayOfMonth : undefined,
-    hour,
+    hour: frequency === 'hourly' ? 0 : hour,
     minute,
     timezone
   })
@@ -354,6 +352,11 @@ function ScheduleCard({
       })
     }
     
+    // For hourly, show "Every hour"
+    if (frequency === 'hourly') {
+      return 'Every hour'
+    }
+    
     // Otherwise, calculate approximate next run
     const now = new Date()
     const next = new Date()
@@ -365,9 +368,6 @@ function ScheduleCard({
       const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7
       next.setDate(now.getDate() + (daysUntilNext || 7))
       if (next <= now) next.setDate(next.getDate() + 7)
-    } else if (frequency === 'monthly') {
-      next.setDate(dayOfMonth)
-      if (next <= now) next.setMonth(next.getMonth() + 1)
     }
     
     return next.toLocaleString('en-US', {
@@ -425,9 +425,9 @@ function ScheduleCard({
             disabled={!enabled}
             className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
           >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
+            <option value="hourly">Hourly (Pro+)</option>
+            <option value="daily">Daily (Starter+)</option>
+            <option value="weekly">Weekly (Free+)</option>
           </select>
         </div>
 
@@ -452,28 +452,9 @@ function ScheduleCard({
           </div>
         )}
 
-        {frequency === 'monthly' && (
+        {/* Time - Only show for daily/weekly, not hourly */}
+        {frequency !== 'hourly' && (
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">
-              Day of Month
-            </label>
-            <select
-              value={dayOfMonth}
-              onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
-              disabled={!enabled}
-              className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
-            >
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                <option key={day} value={day}>
-                  {day}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Time */}
-        <div>
           <label className="block text-sm font-medium text-slate-400 mb-2">
             Time
           </label>
@@ -492,6 +473,7 @@ function ScheduleCard({
             </select>
           </div>
         </div>
+        )}
 
         {/* Timezone */}
         <div>

@@ -17,7 +17,7 @@ export default function Pricing() {
       features: [
         '1 industry profile',
         'Basic competitor tracking',
-        'Weekly updates',
+        'Weekly automated refresh',
         'Email alerts',
         'Community support'
       ],
@@ -33,7 +33,7 @@ export default function Pricing() {
       features: [
         '1 industry profile',
         'Advanced competitor tracking',
-        'Daily updates',
+        'Daily automated refresh',
         'Priority email alerts',
         'Email support',
         'Export reports'
@@ -50,7 +50,7 @@ export default function Pricing() {
       features: [
         '3 industry profiles',
         'Full competitor intelligence',
-        'Real-time updates',
+        'Hourly automated refresh',
         'Smart alerts',
         'API access',
         'Custom reports',
@@ -68,6 +68,7 @@ export default function Pricing() {
       features: [
         '10 industry profiles',
         'Advanced analytics',
+        'Hourly automated refresh',
         'Predictive insights',
         'White-label reports',
         'Dedicated support',

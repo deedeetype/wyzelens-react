@@ -1,0 +1,26 @@
+name: Automated Scans Runner
+
+on:
+  schedule:
+    # Run every hour to check for scheduled scans
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  check-and-run-scans:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check and Execute Due Scans
+        run: |
+          curl -X POST https://wyzelens-react.netlify.app/.netlify/functions/run-scheduled-scans \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "source": "github-actions",
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }'
+        
+      - name: Log Result
+        if: always()
+        run: echo "Scan check completed at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
