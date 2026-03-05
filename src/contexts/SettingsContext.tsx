@@ -20,6 +20,8 @@ export interface ScanPreferences {
 
 export interface AppSettings {
   theme: 'dark' | 'light'
+  lightThemeVariant: 'minimal' | 'soft' | 'premium'
+  darkThemeVariant: 'default' | 'pure' | 'warm'
   language: 'en' | 'fr'
   profile: UserProfile
   scanPreferences: ScanPreferences
@@ -27,6 +29,8 @@ export interface AppSettings {
 
 const defaultSettings: AppSettings = {
   theme: 'dark',
+  lightThemeVariant: 'minimal',
+  darkThemeVariant: 'default',
   language: 'en',
   profile: {
     name: 'David',
@@ -189,7 +193,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (loaded) {
       localStorage.setItem('pulseintel_settings', JSON.stringify(settings))
       // Apply theme
-      document.documentElement.classList.toggle('light-theme', settings.theme === 'light')
+      const root = document.documentElement
+      root.classList.toggle('light-theme', settings.theme === 'light')
+      
+      // Apply theme variants
+      if (settings.theme === 'light') {
+        root.setAttribute('data-light-variant', settings.lightThemeVariant)
+      } else {
+        root.setAttribute('data-dark-variant', settings.darkThemeVariant)
+      }
     }
   }, [settings, loaded])
 

@@ -119,33 +119,75 @@ export default function SettingsView() {
           {t('settings.appearance')}
         </h3>
         
-        <div>
-          <label className={labelClass}>{t('settings.theme')}</label>
-          <div className="flex gap-2">
-            {(['dark', 'light'] as const).map(theme => (
-              <button
-                key={theme}
-                onClick={() => { updateSettings({ theme }); showSaved() }}
-                className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition ${
-                  settings.theme === theme
-                    ? 'bg-indigo-600 border-indigo-500 text-white'
-                    : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
-                }`}
-              >
-                {theme === 'dark' ? (
-                  <span className="flex items-center gap-2">
-                    <Moon className="w-4 h-4" />
-                    Dark
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Sun className="w-4 h-4" />
-                    Light
-                  </span>
-                )}
-              </button>
-            ))}
+        <div className="space-y-6">
+          {/* Theme Mode */}
+          <div>
+            <label className={labelClass}>Theme Mode</label>
+            <div className="flex gap-2">
+              {(['dark', 'light'] as const).map(theme => (
+                <button
+                  key={theme}
+                  onClick={() => { updateSettings({ theme }); showSaved() }}
+                  className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition ${
+                    settings.theme === theme
+                      ? 'bg-indigo-600 border-indigo-500 text-white'
+                      : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                  }`}
+                >
+                  {theme === 'dark' ? (
+                    <span className="flex items-center gap-2">
+                      <Moon className="w-4 h-4" />
+                      Dark
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Sun className="w-4 h-4" />
+                      Light
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Light Theme Variant */}
+          {settings.theme === 'light' && (
+            <div>
+              <label className={labelClass}>Light Theme Style</label>
+              <div className="grid grid-cols-3 gap-3">
+                {([
+                  { value: 'minimal' as const, label: 'Corporate Minimal', desc: 'Clean gray tones' },
+                  { value: 'soft' as const, label: 'Soft Tech', desc: 'Gentle blue-gray' },
+                  { value: 'premium' as const, label: 'Premium Neutral', desc: 'Warm beige tones' }
+                ]).map(variant => (
+                  <button
+                    key={variant.value}
+                    onClick={() => { updateSettings({ lightThemeVariant: variant.value }); showSaved() }}
+                    className={`px-4 py-3 rounded-lg border text-left text-sm transition ${
+                      settings.lightThemeVariant === variant.value
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="font-medium">{variant.label}</div>
+                    <div className={`text-xs mt-1 ${settings.lightThemeVariant === variant.value ? 'text-indigo-200' : 'text-slate-500 light:text-slate-500'}`}>
+                      {variant.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Dark Theme Variant (placeholder for future) */}
+          {settings.theme === 'dark' && (
+            <div>
+              <label className={labelClass}>Dark Theme Style</label>
+              <div className="px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-400">
+                Using default dark theme. More variants coming soon.
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

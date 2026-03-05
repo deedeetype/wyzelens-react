@@ -15,17 +15,50 @@
   --text-body: #cbd5e1;     /* slate-300 */
 }
 
-.light-theme {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;   /* slate-50 */
-  --bg-card: #ffffff;
-  --bg-input: #f1f5f9;       /* slate-100 */
-  --border-primary: #e2e8f0; /* slate-200 */
-  --border-secondary: #cbd5e1; /* slate-300 */
-  --text-primary: #0f172a;   /* slate-900 */
-  --text-secondary: #64748b; /* slate-500 */
-  --text-muted: #94a3b8;    /* slate-400 */
-  --text-body: #475569;     /* slate-600 */
+/* Light Theme Variants */
+.light-theme[data-light-variant="minimal"] {
+  --bg-primary: #FAFAFA;
+  --bg-secondary: #F5F5F5;
+  --bg-card: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --border-primary: #E5E5E5;
+  --border-secondary: #D4D4D8;
+  --text-primary: #18181B;
+  --text-secondary: #71717A;
+  --text-muted: #A1A1AA;
+  --text-body: #52525B;
+}
+
+.light-theme[data-light-variant="soft"] {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-card: #FFFFFF;
+  --bg-input: #F3F4F6;
+  --border-primary: #E5E7EB;
+  --border-secondary: #D1D5DB;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --text-body: #374151;
+}
+
+.light-theme[data-light-variant="premium"] {
+  --bg-primary: #FDFCFB;
+  --bg-secondary: #F7F6F4;
+  --bg-card: #FFFFFF;
+  --bg-input: #F5F4F1;
+  --border-primary: #E8E6E3;
+  --border-secondary: #D4D2CE;
+  --text-primary: #1A1816;
+  --text-secondary: #6C6A66;
+  --text-muted: #9B9894;
+  --text-body: #3D3B37;
+}
+
+/* Dark Theme Variants (default for now, can be expanded later) */
+.dark-theme[data-dark-variant="default"],
+:root {
+  /* Keep existing dark theme as default */
 }
 
 @layer base {
