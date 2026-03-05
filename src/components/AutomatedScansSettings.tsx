@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@clerk/react'
 import { Clock, Calendar, RefreshCw, Save, Trash2, Plus } from 'lucide-react'
 
 interface ScanSchedule {
@@ -68,7 +69,17 @@ export default function AutomatedScansSettings() {
         return
       }
       
-      console.log('[AutomatedScans] Fetching scans via API for user:', user.id)
+      console.log('[AutomatedScans] Fetching scans for user:', user.id)
+      console.log('[AutomatedScans] User ID type:', typeof user.id)
+      
+      // Debug: Let's check if any scans exist at all
+      const { data: allScans, error: allError } = await supabase
+        .from('scans')
+        .select('*')
+        .limit(5)
+        
+      console.log('[AutomatedScans] Sample of all scans:', allScans)
+      console.log('[AutomatedScans] First scan user_id:', allScans?.[0]?.user_id, 'type:', typeof allScans?.[0]?.user_id)
       
       // Fetch scans directly from Supabase
       const { data: scansData, error: scansError } = await supabase

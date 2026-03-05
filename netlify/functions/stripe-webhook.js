@@ -4,6 +4,13 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
+console.log('Webhook init - SUPABASE_URL:', SUPABASE_URL ? 'configured' : 'MISSING');
+console.log('Webhook init - SUPABASE_SERVICE_KEY:', SUPABASE_SERVICE_KEY ? 'configured' : 'MISSING');
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error('CRITICAL: Missing Supabase configuration!');
+}
+
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_SERVICE_KEY
