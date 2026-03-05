@@ -74,6 +74,40 @@ export const handler = async (event) => {
   const eventType = evt.type;
   console.log('Webhook event type:', eventType);
 
+  // Handle user deletion
+  if (eventType === 'user.deleted') {
+    const { id } = evt.data;
+    console.log('Processing user deletion for:', id);
+
+    try {
+      // Delete from users table (cascade will handle related data)
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('clerk_id', id);
+
+      if (error) {
+        console.error('Error deleting user:', error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Failed to delete user', details: error.message }),
+        };
+      }
+
+      console.log('User and related data deleted successfully:', id);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: 'User deleted successfully', user_id: id }),
+      };
+    } catch (error) {
+      console.error('Unexpected error during deletion:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Internal server error', details: error.message }),
+      };
+    }
+  }
+
   if (eventType === 'user.created' || eventType === 'user.updated') {
     const { id, email_addresses, first_name, last_name } = evt.data;
     const email = email_addresses[0]?.email_address;
