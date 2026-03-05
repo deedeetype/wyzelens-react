@@ -98,8 +98,8 @@ export const handler: Handler = async (event) => {
       try {
         console.log(`[Cron] Triggering full refresh for scan ${scanId}`);
         
-        // Step 1: Init
-        console.log(`[Cron] ${scanId} - Step 1: Init`);
+        // Step 1: Init (with explicit isRefresh flag)
+        console.log(`[Cron] ${scanId} - Step 1: Init (refresh mode)`);
         const step1Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -109,7 +109,8 @@ export const handler: Handler = async (event) => {
             companyUrl: scan.company_url,
             companyName: scan.company_name,
             userId: scan.user_id,
-            isScheduled: true
+            isScheduled: true,
+            isRefresh: true  // ← Explicit: This is a refresh, not a new scan
           })
         });
         

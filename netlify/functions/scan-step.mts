@@ -140,7 +140,7 @@ JSON: {"company_name": "X", "industry": "Y", "description": "1-2 sentence descri
 }
 
 // Step 0: Create scan record OR reuse existing profile (incremental model)
-async function stepInit(industry: string, companyUrl?: string, companyName?: string, userId?: string, isScheduled?: boolean) {
+async function stepInit(industry: string, companyUrl?: string, companyName?: string, userId?: string, isScheduled?: boolean, isRefresh?: boolean) {
   // Require authentication - no fallback to demo_user
   if (!userId) {
     console.error('[stepInit] No userId provided - authentication required')
@@ -171,15 +171,20 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   
   console.log(`[stepInit] Looking for existing ${industry} profile (companyUrl: ${companyUrl || 'null'})`)
   console.log(`[stepInit] Found ${existingProfiles.length} existing profiles`)
+  console.log(`[stepInit] Mode: ${isRefresh ? 'REFRESH' : 'NEW/RESCAN'}`)
   
   if (existingProfiles && existingProfiles.length > 0) {
-    // REUSE existing profile - this is a REFRESH, not a new scan
     const existingScan = existingProfiles[0]
-    console.log(`[stepInit] REUSING existing scan ${existingScan.id} (refresh count: ${existingScan.refresh_count || 0})`)
     
-    // ✅ CHECK REFRESH LIMITS (only for manual refreshes, not scheduled)
-    if (!isScheduled) {
-      console.log('[stepInit] Checking refresh limits for manual refresh...')
+    if (isRefresh) {
+      // ═══════════════════════════════════════════════════════════════
+      // REFRESH MODE: Reuse scan, update news/insights only
+      // ═══════════════════════════════════════════════════════════════
+      console.log(`[stepInit] REFRESH MODE - Reusing scan ${existingScan.id} (refresh count: ${existingScan.refresh_count || 0})`)
+      
+      // ✅ CHECK REFRESH TIME LIMITS (only for manual refreshes, not scheduled)
+      if (!isScheduled) {
+        console.log('[stepInit] Checking refresh TIME limits...')
       
       // Get user subscription
       const subRes = await fetch(
@@ -222,28 +227,50 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
         
         console.log(`[stepInit] Refresh allowed: ${hoursSinceRefresh.toFixed(1)}h since last refresh (limit: ${limit.hours}h)`)
       }
+      } else {
+        console.log('[stepInit] Scheduled refresh - skipping manual refresh time limits')
+      }
+      // ✅ END REFRESH TIME LIMITS CHECK
+      
+      await supabasePatch('scans', `id=eq.${existingScan.id}`, {
+        status: 'running',
+        last_refreshed_at: new Date().toISOString(),
+        refresh_count: (existingScan.refresh_count || 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+      
+      return { 
+        scanId: existingScan.id, 
+        isRefresh: true,
+        userId: actualUserId
+      }
+      
     } else {
-      console.log('[stepInit] Scheduled refresh - skipping manual refresh limits')
-    }
-    // ✅ END REFRESH LIMITS CHECK
-    
-    await supabasePatch('scans', `id=eq.${existingScan.id}`, {
-      status: 'running',
-      last_refreshed_at: new Date().toISOString(),
-      refresh_count: (existingScan.refresh_count || 0) + 1,
-      updated_at: new Date().toISOString()
-    })
-    
-    return { 
-      scanId: existingScan.id, 
-      isRefresh: true,
-      userId: actualUserId
+      // ═══════════════════════════════════════════════════════════════
+      // RESCAN MODE: Same industry, but user wants fresh competitors
+      // Delete old scan and create new one (will check profile limits below)
+      // ═══════════════════════════════════════════════════════════════
+      console.log(`[stepInit] RESCAN MODE - Deleting old scan ${existingScan.id} and creating fresh scan`)
+      
+      // Delete old scan (cascade will remove competitors, news, insights, alerts)
+      await fetch(`${SUPABASE_URL}/rest/v1/scans?id=eq.${existingScan.id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_KEY!,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      })
+      
+      console.log(`[stepInit] Old scan deleted, proceeding to create new scan`)
+      // Fall through to NEW SCAN logic below
     }
   }
   
-  // NEW SCAN - Check profile limits
-  console.log(`[stepInit] Creating NEW scan for ${industry}`)
-  console.log('[stepInit] Checking plan limits for new profile...')
+  // ═══════════════════════════════════════════════════════════════
+  // NEW SCAN MODE: Check profile COUNT limits
+  // ═══════════════════════════════════════════════════════════════
+  console.log(`[stepInit] NEW SCAN MODE - Creating scan for ${industry}`)
+  console.log('[stepInit] Checking profile COUNT limits...')
   
   // Get user subscription
   const subRes = await fetch(
@@ -1314,7 +1341,8 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         result = await stepDetect(companyUrl)
         break
       case 'init':
-        result = await stepInit(industry, companyUrl, companyName, userId)
+        const { isScheduled } = JSON.parse(event.body || '{}')
+        result = await stepInit(industry, companyUrl, companyName, userId, isScheduled, isRefresh)
         break
       case 'competitors':
         result = await stepCompetitors(industry, scanId, companyUrl, maxCompetitors, regions, watchlist, userId)
