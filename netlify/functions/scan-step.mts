@@ -895,7 +895,7 @@ Use actual competitor names in market_leaders_share if they are major players.` 
   // Update scan status to completed
   if (isRefresh) {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/scans?id=eq.${scanId}&select=alerts_count,insights_count,news_count`,
+      `${SUPABASE_URL}/rest/v1/scans?id=eq.${scanId}&select=alerts_count,insights_count,news_count,user_id`,
       {
         headers: {
           'apikey': SUPABASE_KEY!,
@@ -913,6 +913,22 @@ Use actual competitor names in market_leaders_share if they are major players.` 
       insights_count: current.insights_count + insertedInsights.length,
       news_count: current.news_count + insertedNews.length
     })
+    
+    // ✅ LOG REFRESH ACTIVITY
+    console.log('[FINALIZE] Creating refresh log entry...')
+    await supabasePost('refresh_logs', {
+      scan_id: scanId,
+      user_id: userId,
+      industry: industry,
+      triggered_by: isRefresh ? 'manual' : 'scheduled', // Will be overridden by run-scheduled-scans.mts if scheduled
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      status: 'success',
+      new_alerts_count: insertedAlerts.length,
+      new_insights_count: insertedInsights.length,
+      new_news_count: insertedNews.length
+    })
+    console.log('[FINALIZE] Refresh log created')
   } else {
     await supabasePatch('scans', `id=eq.${scanId}`, {
       status: 'completed',
