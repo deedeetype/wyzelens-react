@@ -92,18 +92,17 @@ export const handler: Handler = async (event) => {
     
     console.log(`[Cron] ${scansToRun.length} scans to run`);
     
-    // Execute each scan
+    // Execute each scan - ALL 4 STEPS
     const results = [];
     for (const { scanId, scan, schedule } of scansToRun) {
       try {
-        console.log(`[Cron] Triggering refresh for scan ${scanId}`);
+        console.log(`[Cron] Triggering full refresh for scan ${scanId}`);
         
-        // Call the scan-step function to refresh
-        const response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+        // Step 1: Init
+        console.log(`[Cron] ${scanId} - Step 1: Init`);
+        const step1Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             step: 'init',
             industry: scan.industry,
@@ -114,35 +113,124 @@ export const handler: Handler = async (event) => {
           })
         });
         
-        const result = await response.json();
+        const step1Result = await step1Response.json();
         
-        if (result.success) {
-          // Log the refresh
-          await supabase
-            .from('refresh_logs')
-            .insert({
-              scan_id: scanId,
-              user_id: scan.user_id,
-              industry: scan.industry,
-              status: 'running',
-              triggered_by: 'scheduled',
-              started_at: now.toISOString()
-            });
-          
-          results.push({
-            scanId,
-            status: 'started',
-            message: 'Refresh started successfully'
-          });
-        } else {
-          results.push({
-            scanId,
-            status: 'failed',
-            message: result.error || 'Failed to start refresh'
-          });
+        if (!step1Result.success) {
+          throw new Error(`Step 1 failed: ${step1Result.error || 'Unknown error'}`);
         }
+        
+        const actualScanId = step1Result.scanId;
+        console.log(`[Cron] ${scanId} - Step 1 complete, actual scanId: ${actualScanId}`);
+        
+        // Log the refresh start
+        await supabase
+          .from('refresh_logs')
+          .insert({
+            scan_id: actualScanId,
+            user_id: scan.user_id,
+            industry: scan.industry,
+            status: 'running',
+            triggered_by: 'scheduled',
+            started_at: now.toISOString()
+          });
+        
+        // Step 2: Competitors
+        console.log(`[Cron] ${actualScanId} - Step 2: Competitors`);
+        const step2Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            step: '2',
+            scanId: actualScanId,
+            industry: scan.industry,
+            userId: scan.user_id
+          })
+        });
+        
+        const step2Result = await step2Response.json();
+        if (!step2Result.success) {
+          throw new Error(`Step 2 failed: ${step2Result.error || 'Unknown error'}`);
+        }
+        console.log(`[Cron] ${actualScanId} - Step 2 complete`);
+        
+        // Step 3: Insights + Alerts
+        console.log(`[Cron] ${actualScanId} - Step 3: Insights + Alerts`);
+        const step3Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            step: '3',
+            scanId: actualScanId,
+            industry: scan.industry,
+            userId: scan.user_id
+          })
+        });
+        
+        const step3Result = await step3Response.json();
+        if (!step3Result.success) {
+          throw new Error(`Step 3 failed: ${step3Result.error || 'Unknown error'}`);
+        }
+        console.log(`[Cron] ${actualScanId} - Step 3 complete`);
+        
+        // Step 4: News
+        console.log(`[Cron] ${actualScanId} - Step 4: News`);
+        const step4Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            step: '4',
+            scanId: actualScanId,
+            industry: scan.industry,
+            userId: scan.user_id
+          })
+        });
+        
+        const step4Result = await step4Response.json();
+        if (!step4Result.success) {
+          throw new Error(`Step 4 failed: ${step4Result.error || 'Unknown error'}`);
+        }
+        console.log(`[Cron] ${actualScanId} - Step 4 complete`);
+        
+        // Mark scan as completed
+        await supabase
+          .from('scans')
+          .update({ status: 'completed', updated_at: now.toISOString() })
+          .eq('id', actualScanId);
+        
+        // Update refresh log
+        await supabase
+          .from('refresh_logs')
+          .update({ 
+            status: 'completed', 
+            completed_at: now.toISOString() 
+          })
+          .eq('scan_id', actualScanId)
+          .eq('started_at', now.toISOString());
+        
+        console.log(`[Cron] ${actualScanId} - Full refresh completed successfully`);
+        
+        results.push({
+          scanId: actualScanId,
+          status: 'completed',
+          message: 'All 4 steps completed successfully'
+        });
+        
       } catch (error: any) {
         console.error(`[Cron] Error running scan ${scanId}:`, error);
+        
+        // Mark as failed in refresh_logs if we have a scanId
+        if (scanId) {
+          await supabase
+            .from('refresh_logs')
+            .update({ 
+              status: 'failed', 
+              error_message: error.message,
+              completed_at: now.toISOString() 
+            })
+            .eq('scan_id', scanId)
+            .eq('started_at', now.toISOString());
+        }
+        
         results.push({
           scanId,
           status: 'error',
