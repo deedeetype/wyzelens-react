@@ -205,34 +205,28 @@ export default function ActivityView() {
                 </div>
                 
                 {/* Show stats for completed refreshes */}
-                {log.status === 'success' && (
+                {log.status === 'completed' && (
                   <div className="flex items-center gap-4 mt-3 text-sm">
-                    {log.new_insights_count !== null && log.new_insights_count !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className={`w-4 h-4 ${log.new_insights_count > 0 ? 'text-indigo-400' : 'text-slate-600'}`} />
-                        <span className={`font-medium ${log.new_insights_count > 0 ? 'text-indigo-400' : 'text-slate-500'}`}>
-                          {log.new_insights_count}
-                        </span>
-                        <span className="text-slate-400">insight{log.new_insights_count !== 1 ? 's' : ''}</span>
-                      </div>
-                    )}
-                    {log.new_alerts_count !== null && log.new_alerts_count !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <AlertCircle className={`w-4 h-4 ${log.new_alerts_count > 0 ? 'text-red-400' : 'text-slate-600'}`} />
-                        <span className={`font-medium ${log.new_alerts_count > 0 ? 'text-red-400' : 'text-slate-500'}`}>
-                          {log.new_alerts_count}
-                        </span>
-                        <span className="text-slate-400">alert{log.new_alerts_count !== 1 ? 's' : ''}</span>
-                      </div>
-                    )}
-                    {log.new_news_count !== null && log.new_news_count !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <span className={`font-medium ${log.new_news_count > 0 ? 'text-slate-300' : 'text-slate-500'}`}>
-                          {log.new_news_count}
-                        </span>
-                        <span className="text-slate-400">news</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className={`w-4 h-4 ${(log.new_insights_count || 0) > 0 ? 'text-indigo-400' : 'text-slate-600'}`} />
+                      <span className={`font-medium ${(log.new_insights_count || 0) > 0 ? 'text-indigo-400' : 'text-slate-500'}`}>
+                        {log.new_insights_count || 0}
+                      </span>
+                      <span className="text-slate-400">insight{(log.new_insights_count || 0) !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <AlertCircle className={`w-4 h-4 ${(log.new_alerts_count || 0) > 0 ? 'text-red-400' : 'text-slate-600'}`} />
+                      <span className={`font-medium ${(log.new_alerts_count || 0) > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                        {log.new_alerts_count || 0}
+                      </span>
+                      <span className="text-slate-400">alert{(log.new_alerts_count || 0) !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={`font-medium ${(log.new_news_count || 0) > 0 ? 'text-slate-300' : 'text-slate-500'}`}>
+                        {log.new_news_count || 0}
+                      </span>
+                      <span className="text-slate-400">news</span>
+                    </div>
                   </div>
                 )}
                 
