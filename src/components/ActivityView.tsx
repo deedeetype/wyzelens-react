@@ -13,7 +13,7 @@ interface RefreshLog {
   triggered_by: 'manual' | 'scheduled'
   started_at: string
   completed_at: string
-  status: 'success' | 'failed' | 'running'
+  status: 'completed' | 'failed' | 'running'
   new_alerts_count: number
   new_insights_count: number
   new_news_count: number
@@ -101,7 +101,7 @@ export default function ActivityView() {
   
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'success':
+      case 'completed':
         return <CheckCircle className="w-5 h-5 text-emerald-400" />
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-400" />
@@ -185,7 +185,7 @@ export default function ActivityView() {
                       : 'Deleted Profile'}
                   </h3>
                   {getTriggerBadge(log.triggered_by)}
-                  {log.status === 'success' && (
+                  {log.status === 'completed' && (
                     <span className="text-xs text-emerald-400 font-medium">
                       Completed
                     </span>
