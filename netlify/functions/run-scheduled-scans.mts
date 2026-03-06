@@ -95,6 +95,9 @@ export const handler: Handler = async (event) => {
     // Execute each scan - ALL 4 STEPS
     const results = [];
     for (const { scanId, scan, schedule } of scansToRun) {
+      const scanStartTime = Date.now();
+      const SCAN_TIMEOUT_MS = 9 * 60 * 1000; // 9 minutes (Netlify has 10 min limit)
+      
       try {
         console.log(`[Cron] Triggering full refresh for scan ${scanId}`);
         
@@ -125,7 +128,7 @@ export const handler: Handler = async (event) => {
         console.log(`[Cron] ${scanId} - Step 1 complete, actual scanId: ${actualScanId}, isRefresh: ${isRefresh}`);
         
         // Log the refresh start
-        await supabase
+        const { data: logData } = await supabase
           .from('refresh_logs')
           .insert({
             scan_id: actualScanId,
@@ -134,11 +137,20 @@ export const handler: Handler = async (event) => {
             status: 'running',
             triggered_by: 'scheduled',
             started_at: now.toISOString()
-          });
+          })
+          .select('id')
+          .single();
+        
+        const refreshLogId = logData?.id;
         
         if (isRefresh) {
           // REFRESH MODE: Skip competitors, only update news + analyze
           console.log(`[Cron] ${actualScanId} - REFRESH MODE: Fetching news + analyzing`);
+          
+          // Check timeout before each step
+          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+            throw new Error('Scan timeout exceeded before news step');
+          }
           
           // Step: News (fetch first to get fresh data)
           console.log(`[Cron] ${actualScanId} - Fetching news`);
@@ -158,6 +170,11 @@ export const handler: Handler = async (event) => {
             throw new Error(`News fetch failed: ${newsResult.error || 'Unknown error'}`);
           }
           console.log(`[Cron] ${actualScanId} - News fetched successfully`);
+          
+          // Check timeout before analyze step
+          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+            throw new Error('Scan timeout exceeded before analyze step');
+          }
           
           // Step: Analyze (generate insights/alerts from fresh news)
           console.log(`[Cron] ${actualScanId} - Analyzing (insights + alerts)`);
@@ -184,6 +201,11 @@ export const handler: Handler = async (event) => {
           // NEW SCAN MODE: Execute all steps
           console.log(`[Cron] ${actualScanId} - NEW SCAN MODE: Executing full scan`);
           
+          // Check timeout before competitors step
+          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+            throw new Error('Scan timeout exceeded before competitors step');
+          }
+          
           // Step: Competitors
           console.log(`[Cron] ${actualScanId} - Fetching competitors`);
           const competitorsResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
@@ -203,6 +225,11 @@ export const handler: Handler = async (event) => {
           }
           console.log(`[Cron] ${actualScanId} - Competitors fetched`);
           
+          // Check timeout before news step
+          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+            throw new Error('Scan timeout exceeded before news step');
+          }
+          
           // Step: News
           console.log(`[Cron] ${actualScanId} - Fetching news`);
           const newsResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
@@ -221,6 +248,11 @@ export const handler: Handler = async (event) => {
             throw new Error(`News fetch failed: ${newsResult.error || 'Unknown error'}`);
           }
           console.log(`[Cron] ${actualScanId} - News fetched`);
+          
+          // Check timeout before final analyze step
+          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+            throw new Error('Scan timeout exceeded before analyze step');
+          }
           
           // Step: Analyze (insights + alerts)
           console.log(`[Cron] ${actualScanId} - Analyzing`);
@@ -264,17 +296,32 @@ export const handler: Handler = async (event) => {
         
         console.log(`[Cron] ${actualScanId} - New items: ${counts.new_insights_count} insights, ${counts.new_alerts_count} alerts, ${counts.new_news_count} news`);
         
-        // Update refresh log with counts
-        await supabase
-          .from('refresh_logs')
-          .update({ 
-            status: 'completed',
-            new_alerts_count: counts.new_alerts_count,
-            new_insights_count: counts.new_insights_count,
-            completed_at: now.toISOString()
-          })
-          .eq('scan_id', actualScanId)
-          .eq('started_at', refreshStartTime);
+        // Update refresh log with counts (use log ID if we have it)
+        if (refreshLogId) {
+          await supabase
+            .from('refresh_logs')
+            .update({ 
+              status: 'completed',
+              new_alerts_count: counts.new_alerts_count,
+              new_insights_count: counts.new_insights_count,
+              new_news_count: counts.new_news_count,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', refreshLogId);
+        } else {
+          // Fallback: match by scan_id and started_at
+          await supabase
+            .from('refresh_logs')
+            .update({ 
+              status: 'completed',
+              new_alerts_count: counts.new_alerts_count,
+              new_insights_count: counts.new_insights_count,
+              new_news_count: counts.new_news_count,
+              completed_at: new Date().toISOString()
+            })
+            .eq('scan_id', actualScanId)
+            .eq('started_at', refreshStartTime);
+        }
         
         console.log(`[Cron] ${actualScanId} - Full refresh completed successfully`);
         
@@ -287,14 +334,25 @@ export const handler: Handler = async (event) => {
       } catch (error: any) {
         console.error(`[Cron] Error running scan ${scanId}:`, error);
         
-        // Mark as failed in refresh_logs if we have a scanId
-        if (scanId) {
+        // Mark as failed in refresh_logs
+        if (refreshLogId) {
+          // Use log ID if we have it (most reliable)
           await supabase
             .from('refresh_logs')
             .update({ 
               status: 'failed', 
               error_message: error.message,
-              completed_at: now.toISOString() 
+              completed_at: new Date().toISOString() 
+            })
+            .eq('id', refreshLogId);
+        } else if (scanId) {
+          // Fallback: match by scan_id and started_at
+          await supabase
+            .from('refresh_logs')
+            .update({ 
+              status: 'failed', 
+              error_message: error.message,
+              completed_at: new Date().toISOString() 
             })
             .eq('scan_id', scanId)
             .eq('started_at', now.toISOString());
