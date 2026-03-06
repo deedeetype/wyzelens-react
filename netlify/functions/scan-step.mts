@@ -211,10 +211,45 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
       if (lastRefresh) {
         const hoursSinceRefresh = (now.getTime() - lastRefresh.getTime()) / (1000 * 60 * 60)
         
-        // Refresh limits by plan
+        // Refresh limits by plan (manual refreshes only)
+        // FREE: 1/day, STARTER: 3/day, PRO+: unlimited
+        const now = new Date()
+        const startOfDayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+        
+        // Count manual refreshes today (UTC)
+        const countRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/refresh_logs?user_id=eq.${actualUserId}&triggered_by=eq.manual&created_at=gte.${startOfDayUTC.toISOString()}&select=id`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
+        const todaysRefreshes = await countRes.json()
+        const manualRefreshCount = todaysRefreshes?.length || 0
+        
+        const dailyRefreshLimits: Record<string, number> = {
+          free: 1,
+          starter: 3,
+          pro: 999,        // unlimited
+          business: 999,   // unlimited
+          enterprise: 999  // unlimited
+        }
+        
+        const dailyLimit = dailyRefreshLimits[plan] || dailyRefreshLimits.free
+        
+        if (manualRefreshCount >= dailyLimit) {
+          console.error(`[stepInit] Daily manual refresh limit reached: ${manualRefreshCount}/${dailyLimit}`)
+          throw new Error(`Daily refresh limit reached. Your ${plan} plan allows ${dailyLimit} manual refresh${dailyLimit > 1 ? 'es' : ''} per day. Upgrade for more frequent updates or wait until tomorrow (UTC).`)
+        }
+        
+        console.log(`[stepInit] Manual refresh allowed: ${manualRefreshCount}/${dailyLimit} used today`)
+        
+        // OLD: Hourly/daily limits (now removed in favor of daily counter)
         const refreshLimits: Record<string, { hours: number, label: string }> = {
-          free: { hours: 168, label: 'weekly' },      // 7 days
-          starter: { hours: 24, label: 'daily' },      // 1 day
+          free: { hours: 24, label: 'daily' },        // just for auto-refresh
+          starter: { hours: 24, label: 'daily' },      // just for auto-refresh
           pro: { hours: 1, label: 'hourly' },          // 1 hour
           business: { hours: 1, label: 'hourly' },     // 1 hour
           enterprise: { hours: 1, label: 'hourly' }    // 1 hour
@@ -305,11 +340,11 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   const activeScans = scans?.length || 0
   console.log(`[stepInit] Active scans: ${activeScans}`)
   
-  // Plan limits for NEW profiles
+  // Plan limits for NEW profiles (updated 2026-03-06)
   const limits: Record<string, number> = {
     free: 1,
-    starter: 1,
-    pro: 3,
+    starter: 3,      // ← Was 1
+    pro: 5,          // ← Was 3
     business: 10,
     enterprise: 999
   }

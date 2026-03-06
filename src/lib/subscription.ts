@@ -5,31 +5,32 @@
 
 import { createSupabaseClient } from './supabase'
 
-// Plan definitions
+// Plan definitions (Updated 2026-03-06)
 export const PLANS = {
   free: {
     name: 'Free',
     price: 0,
     profiles: 1,
     refreshAuto: false,
-    refreshManual: 0,
-    competitors: 10,
+    refreshManual: 1,           // ← Was 0
+    competitors: 5,             // ← Was 10
     historyDays: 7,
     features: {
       export: false,
       emailAlerts: false,
       weeklyDigest: false,
       slackWebhook: false,
-      customWatchlist: false,
+      customWatchlist: false,   // ← FREE cannot use watchlist
+      regionalFilter: false,    // ← NEW: FREE cannot use regional filter
       apiAccess: false
     }
   },
   starter: {
     name: 'Starter',
-    price: 15,
-    profiles: 1,
-    refreshAuto: true, // Daily
-    refreshManual: 1, // Per day
+    price: 8,                   // ← Was 15
+    profiles: 3,                // ← Was 1
+    refreshAuto: 'daily',       // Daily auto-refresh
+    refreshManual: 3,           // ← Was 1, per day
     competitors: 10,
     historyDays: 30,
     features: {
@@ -37,49 +38,52 @@ export const PLANS = {
       emailAlerts: false,
       weeklyDigest: false,
       slackWebhook: false,
-      customWatchlist: false,
+      customWatchlist: false,   // ← STARTER cannot use watchlist
+      regionalFilter: false,    // ← NEW: STARTER cannot use regional filter
       apiAccess: false
     }
   },
   pro: {
     name: 'Professional',
-    price: 49,
-    profiles: 3,
-    refreshAuto: true, // Daily
-    refreshManual: 999, // "Unlimited"
-    competitors: 30,
+    price: 20,                  // ← Was 49
+    profiles: 5,                // ← Was 3
+    refreshAuto: 'hourly',      // ← Was daily, now hourly
+    refreshManual: 999,         // Unlimited
+    competitors: 15,            // ← Was 30
     historyDays: 90,
     features: {
       export: true,
       emailAlerts: true,
       weeklyDigest: false,
       slackWebhook: false,
-      customWatchlist: true,
+      customWatchlist: true,    // ← PRO can use watchlist
+      regionalFilter: true,     // ← NEW: PRO can use regional filter
       apiAccess: false
     }
   },
   business: {
     name: 'Business',
-    price: 99,
+    price: 49,                  // ← Was 99
     profiles: 10,
-    refreshAuto: true, // Daily
-    refreshManual: 999, // "Unlimited"
-    competitors: 100,
-    historyDays: 999999, // "Unlimited"
+    refreshAuto: 'hourly',      // ← Was daily, now hourly
+    refreshManual: 999,         // Unlimited
+    competitors: 999,           // ← Was 100, now unlimited
+    historyDays: 999999,        // Unlimited
     features: {
       export: true,
       emailAlerts: true,
       weeklyDigest: true,
       slackWebhook: true,
-      customWatchlist: true,
+      customWatchlist: true,    // ← BUSINESS can use watchlist
+      regionalFilter: true,     // ← NEW: BUSINESS can use regional filter
       apiAccess: false
     }
   },
   enterprise: {
     name: 'Enterprise',
-    price: 299,
+    price: null,                // ← Was 299, now "Contact Sales"
     profiles: 999,
-    refreshAuto: true,
+    refreshAuto: 'hourly',
     refreshManual: 999,
     competitors: 999,
     historyDays: 999999,
@@ -89,6 +93,7 @@ export const PLANS = {
       weeklyDigest: true,
       slackWebhook: true,
       customWatchlist: true,
+      regionalFilter: true,
       apiAccess: true
     }
   }
@@ -231,20 +236,14 @@ export async function canRefreshManual(userId: string, token?: string): Promise<
   const plan = await getUserPlan(userId, token)
   const limits = getPlanLimits(plan)
   
-  if (plan === 'free') {
-    return {
-      allowed: false,
-      reason: 'Manual refresh is not available on the Free plan. Upgrade to Starter ($15/mois) to get daily auto-refresh.'
-    }
-  }
-  
-  // For starter plan, check daily limit
-  if (plan === 'starter') {
+  // Free & Starter have daily limits
+  if (plan === 'free' || plan === 'starter') {
     const todayUsage = await getTodayUsage(userId, token)
     if (todayUsage.refresh_manual >= limits.refreshManual) {
+      const limitText = limits.refreshManual === 1 ? '1 manual refresh' : `${limits.refreshManual} manual refreshes`
       return {
         allowed: false,
-        reason: `You've used your ${limits.refreshManual} manual refresh${limits.refreshManual > 1 ? 'es' : ''} for today. Try again tomorrow or upgrade to Pro for unlimited.`
+        reason: `You've used your ${limitText} for today. Try again tomorrow or upgrade to Pro for unlimited.`
       }
     }
   }

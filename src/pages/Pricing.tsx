@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/react'
-import { Check, Crown, Zap, Shield } from 'lucide-react'
+import { Check, Crown, Zap, Shield, Mail } from 'lucide-react'
 import { useSubscription } from '@/hooks/useSubscription'
 
 export default function Pricing() {
@@ -9,17 +9,20 @@ export default function Pricing() {
   const { user } = useUser()
   const { plan: currentPlan } = useSubscription()
   const [loading, setLoading] = useState('')
+  
   const plans = [
     {
       name: 'Free',
       price: '$0',
+      period: '/forever',
       description: 'Perfect for getting started',
       features: [
         '1 industry profile',
-        'Basic competitor tracking',
-        'Weekly automated refresh',
-        'Email alerts',
-        'Community support'
+        '5 competitors per scan',
+        '1 manual refresh/day',
+        'No automated refresh',
+        '7 days history',
+        'Email support'
       ],
       cta: 'Start Free',
       href: '/sign-up',
@@ -28,59 +31,118 @@ export default function Pricing() {
     },
     {
       name: 'Starter',
-      price: '$49',
-      description: 'For small teams',
+      price: '$8',
+      period: '/month',
+      description: 'For individuals & freelancers',
       features: [
-        '1 industry profile',
-        'Advanced competitor tracking',
+        '3 industry profiles',
+        '10 competitors per scan',
+        '3 manual refreshes/day',
         'Daily automated refresh',
-        'Priority email alerts',
-        'Email support',
-        'Export reports'
+        '30 days history',
+        'Priority email support'
       ],
-      cta: 'Start Trial',
+      cta: 'Start 14-day Trial',
       href: '/sign-up',
       highlighted: false,
       planId: 'starter'
     },
     {
       name: 'Pro',
-      price: '$149',
-      description: 'For growing businesses',
+      price: '$20',
+      period: '/month',
+      description: 'For growing teams',
       features: [
-        '3 industry profiles',
-        'Full competitor intelligence',
+        '5 industry profiles',
+        '15 competitors per scan',
+        'Unlimited manual refreshes',
         'Hourly automated refresh',
-        'Smart alerts',
-        'API access',
-        'Custom reports',
+        'Custom competitor watchlist',
+        'Regional filters',
+        '90 days history',
         'Priority support'
       ],
-      cta: 'Start Trial',
+      cta: 'Start 14-day Trial',
       href: '/sign-up',
       highlighted: true,
       planId: 'pro'
     },
     {
       name: 'Business',
-      price: '$399',
-      description: 'For enterprises',
+      price: '$49',
+      period: '/month',
+      description: 'For established businesses',
       features: [
         '10 industry profiles',
-        'Advanced analytics',
+        'Unlimited competitors',
+        'Unlimited manual refreshes',
         'Hourly automated refresh',
-        'Predictive insights',
-        'White-label reports',
+        'Custom competitor watchlist',
+        'Regional filters',
+        'Unlimited history',
         'Dedicated support',
-        'Custom integrations',
-        'Team collaboration'
+        'API access (soon)'
       ],
-      cta: 'Contact Sales',
+      cta: 'Start 14-day Trial',
       href: '/sign-up',
       highlighted: false,
       planId: 'business'
+    },
+    {
+      name: 'Enterprise',
+      price: 'Custom',
+      period: '',
+      description: 'For large organizations',
+      features: [
+        'Unlimited industry profiles',
+        'Unlimited competitors',
+        'Unlimited manual refreshes',
+        'Hourly automated refresh',
+        'Custom competitor watchlist',
+        'Regional filters',
+        'Unlimited history',
+        'White-label reports',
+        'Dedicated account manager',
+        'Custom integrations',
+        'SLA guarantee'
+      ],
+      cta: 'Contact Sales',
+      href: 'mailto:david.laborieux@labwyze.com',
+      highlighted: false,
+      planId: 'enterprise'
     }
   ]
+
+  const handleSelectPlan = async (planId: string, href: string) => {
+    if (planId === 'enterprise') {
+      window.location.href = href
+      return
+    }
+    
+    if (!user) {
+      navigate(href)
+      return
+    }
+    
+    if (planId === 'free') {
+      navigate('/dashboard')
+      return
+    }
+    
+    // TODO: Stripe checkout integration
+    setLoading(planId)
+    try {
+      // Call Stripe checkout endpoint
+      console.log('TODO: Integrate Stripe checkout for', planId)
+      setTimeout(() => {
+        setLoading('')
+        alert('Stripe integration coming soon!')
+      }, 1000)
+    } catch (error) {
+      setLoading('')
+      console.error('Error:', error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -101,10 +163,12 @@ export default function Pricing() {
                 </Link>
               ) : (
                 <>
-                  <Link to="/sign-in" className="text-gray-300 hover:text-white transition">Sign In</Link>
+                  <Link to="/sign-in" className="text-slate-400 hover:text-white transition">
+                    Sign In
+                  </Link>
                   <Link 
                     to="/sign-up"
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-2 rounded-lg font-semibold transition"
+                    className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-lg font-semibold transition"
                   >
                     Get Started
                   </Link>
@@ -116,119 +180,88 @@ export default function Pricing() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-12 px-4">
+      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">Simple, Transparent Pricing</h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Start free, upgrade when you need more. All plans include our core competitive intelligence features.
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 text-transparent bg-clip-text">
+            Choose Your Plan
+          </h1>
+          <p className="text-xl text-slate-400 mb-4">
+            Start free, scale as you grow
+          </p>
+          <p className="text-sm text-slate-500">
+            All paid plans include a 14-day free trial. No credit card required.
           </p>
         </div>
-      </section>
+      </div>
 
-      {/* Pricing Grid */}
-      <section className="pb-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {plans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl p-8 border-2 transition-all ${
-                  plan.highlighted
-                    ? 'bg-gradient-to-b from-indigo-900/40 to-purple-900/40 border-indigo-500 transform scale-105'
-                    : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                      <Crown className="w-4 h-4" />
-                      Most Popular
-                    </div>
-                  </div>
-                )}
-                
-                {currentPlan === plan.planId && (
-                  <div className="absolute -top-4 right-4">
-                    <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      Current Plan
-                    </div>
-                  </div>
-                )}
-
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <div className="text-4xl font-bold mb-2">
-                  {plan.price}
-                  {plan.price !== '$0' && <span className="text-lg text-gray-400">/month</span>}
+      {/* Pricing Cards */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          {plans.map((plan) => (
+            <div
+              key={plan.planId}
+              className={`relative rounded-2xl p-6 ${
+                plan.highlighted
+                  ? 'bg-gradient-to-b from-indigo-500/10 to-purple-500/10 border-2 border-indigo-500/50'
+                  : 'bg-slate-900 border border-slate-800'
+              }`}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    MOST POPULAR
+                  </span>
                 </div>
-                <p className="text-gray-400 mb-6">{plan.description}</p>
+              )}
 
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-300">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {plan.planId === 'free' || !user ? (
-                  <Link
-                    to={plan.href}
-                    className={`block text-center px-6 py-3 rounded-lg font-semibold transition ${
-                      plan.highlighted
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                        : 'bg-slate-800 hover:bg-slate-700 text-white'
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      if (loading) return
-                      setLoading(plan.planId)
-                      
-                      try {
-                        const response = await fetch('/.netlify/functions/create-checkout-session', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'x-user-email': user.primaryEmailAddress?.emailAddress || '',
-                          },
-                          body: JSON.stringify({
-                            planId: plan.planId,
-                            userId: user.id,
-                          }),
-                        })
-                        
-                        const data = await response.json()
-                        
-                        if (data.url) {
-                          window.location.href = data.url
-                        } else {
-                          throw new Error('No checkout URL received')
-                        }
-                      } catch (error) {
-                        console.error('Checkout error:', error)
-                        alert('Failed to start checkout. Please try again.')
-                        setLoading('')
-                      }
-                    }}
-                    disabled={loading === plan.planId}
-                    className={`w-full text-center px-6 py-3 rounded-lg font-semibold transition ${
-                      plan.highlighted
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                        : 'bg-slate-800 hover:bg-slate-700 text-white'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {loading === plan.planId ? 'Loading...' : plan.cta}
-                  </button>
-                )}
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  {plan.period && <span className="text-slate-400">{plan.period}</span>}
+                </div>
+                <p className="text-sm text-slate-400">{plan.description}</p>
               </div>
-            ))}
-          </div>
+
+              <button
+                onClick={() => handleSelectPlan(plan.planId, plan.href)}
+                disabled={loading === plan.planId}
+                className={`w-full py-3 px-4 rounded-lg font-semibold transition mb-6 ${
+                  plan.highlighted
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
+                    : 'bg-slate-800 hover:bg-slate-700'
+                } ${loading === plan.planId ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {loading === plan.planId ? 'Loading...' : plan.cta}
+              </button>
+
+              <div className="space-y-3">
+                {plan.features.map((feature, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-slate-300">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
+
+      {/* FAQ or CTA Section */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 text-center">
+        <h2 className="text-3xl font-bold mb-4">Not sure which plan is right for you?</h2>
+        <p className="text-slate-400 mb-8">
+          Start with the Free plan and upgrade anytime as your needs grow.
+        </p>
+        <a
+          href="mailto:david.laborieux@labwyze.com"
+          className="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-lg font-semibold transition"
+        >
+          <Mail className="w-5 h-5" />
+          Contact Sales
+        </a>
+      </div>
     </div>
   )
 }
