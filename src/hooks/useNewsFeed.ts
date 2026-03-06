@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createSupabaseClient } from '@/lib/supabase'
-import { useAuth } from '@clerk/react'
+import { useAuth, useUser } from '@clerk/react'
 
 export interface NewsItem {
   id: string
@@ -19,6 +19,7 @@ export interface NewsItem {
 
 export function useNewsFeed(scanId?: string) {
   const { getToken } = useAuth()
+  const { user } = useUser()
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,8 +47,9 @@ export function useNewsFeed(scanId?: string) {
       const { data, error } = await query
       if (error) throw error
 
-      // Get read status from localStorage
-      const readStatus = JSON.parse(localStorage.getItem('pulseintel_news_read') || '{}')
+      // Get read status from localStorage (scoped by user)
+      const storageKey = user?.id ? `wyzelens_news_read_${user.id}` : 'wyzelens_news_read_guest'
+      const readStatus = JSON.parse(localStorage.getItem(storageKey) || '{}')
       const newsWithRead = (data || []).map(item => ({
         ...item,
         read: readStatus[item.id] || false
@@ -64,10 +66,11 @@ export function useNewsFeed(scanId?: string) {
 
   async function markAsRead(newsId: string) {
     try {
-      // Update localStorage
-      const readStatus = JSON.parse(localStorage.getItem('pulseintel_news_read') || '{}')
+      // Update localStorage (scoped by user)
+      const storageKey = user?.id ? `wyzelens_news_read_${user.id}` : 'wyzelens_news_read_guest'
+      const readStatus = JSON.parse(localStorage.getItem(storageKey) || '{}')
       readStatus[newsId] = true
-      localStorage.setItem('pulseintel_news_read', JSON.stringify(readStatus))
+      localStorage.setItem(storageKey, JSON.stringify(readStatus))
       
       // Update local state
       setNews(prev => prev.map(n => n.id === newsId ? { ...n, read: true } : n))

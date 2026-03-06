@@ -3,12 +3,13 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@clerk/react'
+import { useAuth, useUser } from '@clerk/react'
 import { createSupabaseClient } from '@/lib/supabase'
 import { type NewsItem } from '@/contexts/NewsFeedContext'
 
 export function useArchivedNews(scanId?: string) {
   const { getToken } = useAuth()
+  const { user } = useUser()
   const [archivedNews, setArchivedNews] = useState<NewsItem[]>([])
   const [archivedCount, setArchivedCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -34,8 +35,9 @@ export function useArchivedNews(scanId?: string) {
       
       if (error) throw error
       
-      // Add read status from localStorage
-      const readStatus = JSON.parse(localStorage.getItem('pulseintel_news_read') || '{}')
+      // Add read status from localStorage (scoped by user)
+      const storageKey = user?.id ? `wyzelens_news_read_${user.id}` : 'wyzelens_news_read_guest'
+      const readStatus = JSON.parse(localStorage.getItem(storageKey) || '{}')
       const newsWithRead = (data || []).map(item => ({
         ...item,
         read: readStatus[item.id] || false

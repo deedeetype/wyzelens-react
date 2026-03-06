@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { createSupabaseClient } from '@/lib/supabase'
-import { useAuth } from '@clerk/react'
+import { useAuth, useUser } from '@clerk/react'
 
 export interface NewsItem {
   id: string
@@ -35,6 +35,7 @@ const NewsFeedContext = createContext<NewsFeedContextType | undefined>(undefined
 
 export function NewsFeedProvider({ children }: { children: ReactNode }) {
   const { getToken } = useAuth()
+  const { user } = useUser()
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -64,8 +65,9 @@ export function NewsFeedProvider({ children }: { children: ReactNode }) {
       const { data, error: fetchError } = await query
       if (fetchError) throw fetchError
 
-      // Get read status from localStorage
-      const readStatus = JSON.parse(localStorage.getItem('pulseintel_news_read') || '{}')
+      // Get read status from localStorage (scoped by user)
+      const storageKey = user?.id ? `wyzelens_news_read_${user.id}` : 'wyzelens_news_read_guest'
+      const readStatus = JSON.parse(localStorage.getItem(storageKey) || '{}')
       const newsWithRead = (data || []).map(item => ({
         ...item,
         read: readStatus[item.id] || false
@@ -87,10 +89,11 @@ export function NewsFeedProvider({ children }: { children: ReactNode }) {
     ))
 
     try {
-      // Update localStorage
-      const readStatus = JSON.parse(localStorage.getItem('pulseintel_news_read') || '{}')
+      // Update localStorage (scoped by user)
+      const storageKey = user?.id ? `wyzelens_news_read_${user.id}` : 'wyzelens_news_read_guest'
+      const readStatus = JSON.parse(localStorage.getItem(storageKey) || '{}')
       readStatus[newsId] = true
-      localStorage.setItem('pulseintel_news_read', JSON.stringify(readStatus))
+      localStorage.setItem(storageKey, JSON.stringify(readStatus))
     } catch (err: any) {
       console.error('Error marking news as read:', err)
     }

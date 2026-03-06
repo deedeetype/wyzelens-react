@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { useUser } from '@clerk/react'
 
 export interface UserProfile {
   name: string
@@ -173,25 +174,30 @@ const translations: Record<string, Record<string, string>> = {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useUser()
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
   const [loaded, setLoaded] = useState(false)
 
-  // Load from localStorage on mount
+  // Load from localStorage when user is available
   useEffect(() => {
+    if (!user?.id) return
+    
     try {
-      const saved = localStorage.getItem('pulseintel_settings')
+      const storageKey = `wyzelens_settings_${user.id}`
+      const saved = localStorage.getItem(storageKey)
       if (saved) {
         const parsed = JSON.parse(saved)
         setSettings({ ...defaultSettings, ...parsed, profile: { ...defaultSettings.profile, ...parsed.profile }, scanPreferences: { ...defaultSettings.scanPreferences, ...parsed.scanPreferences } })
       }
     } catch (e) {}
     setLoaded(true)
-  }, [])
+  }, [user?.id])
 
-  // Save to localStorage on change
+  // Save to localStorage on change (scoped by user)
   useEffect(() => {
-    if (loaded) {
-      localStorage.setItem('pulseintel_settings', JSON.stringify(settings))
+    if (loaded && user?.id) {
+      const storageKey = `wyzelens_settings_${user.id}`
+      localStorage.setItem(storageKey, JSON.stringify(settings))
       // Apply theme
       const root = document.documentElement
       root.classList.toggle('light-theme', settings.theme === 'light')
