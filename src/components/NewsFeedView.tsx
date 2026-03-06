@@ -235,7 +235,14 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
                   if (!item.read) markAsRead(item.id)
                 }}
                 className="flex-1 min-w-0 cursor-pointer">
-                <h3 className="text-white font-medium line-clamp-2">{item.title}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-white font-medium line-clamp-2">{item.title}</h3>
+                  {item.is_new && (
+                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30 flex-shrink-0">
+                      NEW
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
                   {item.source && (
                     <span className="text-xs text-indigo-400">{item.source}</span>

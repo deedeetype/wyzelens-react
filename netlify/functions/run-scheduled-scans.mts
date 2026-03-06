@@ -251,15 +251,30 @@ export const handler: Handler = async (event) => {
           .update({ status: 'completed', updated_at: now.toISOString() })
           .eq('id', actualScanId);
         
-        // Update refresh log
+        // Count new items added during this refresh
+        const refreshStartTime = now.toISOString();
+        
+        const { data: newCounts } = await supabase
+          .rpc('count_new_items_for_scan', {
+            p_scan_id: actualScanId,
+            p_since: refreshStartTime
+          });
+        
+        const counts = newCounts?.[0] || { new_news_count: 0, new_insights_count: 0, new_alerts_count: 0 };
+        
+        console.log(`[Cron] ${actualScanId} - New items: ${counts.new_insights_count} insights, ${counts.new_alerts_count} alerts, ${counts.new_news_count} news`);
+        
+        // Update refresh log with counts
         await supabase
           .from('refresh_logs')
           .update({ 
-            status: 'completed', 
-            completed_at: now.toISOString() 
+            status: 'completed',
+            new_alerts_count: counts.new_alerts_count,
+            new_insights_count: counts.new_insights_count,
+            completed_at: now.toISOString()
           })
           .eq('scan_id', actualScanId)
-          .eq('started_at', now.toISOString());
+          .eq('started_at', refreshStartTime);
         
         console.log(`[Cron] ${actualScanId} - Full refresh completed successfully`);
         

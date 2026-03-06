@@ -53,6 +53,8 @@ export type Alert = {
   read: boolean
   source_url: string | null
   created_at: string
+  is_new?: boolean
+  added_at?: string
 }
 
 export type Insight = {
@@ -66,4 +68,6 @@ export type Insight = {
   related_competitors: string[] | null
   action_items: string[] | null
   created_at: string
+  is_new?: boolean
+  added_at?: string
 }
