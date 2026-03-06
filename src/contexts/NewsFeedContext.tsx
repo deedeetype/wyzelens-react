@@ -17,6 +17,7 @@ export interface NewsItem {
   created_at: string
   scan_id: string
   read?: boolean
+  is_new?: boolean
 }
 
 interface NewsFeedContextType {

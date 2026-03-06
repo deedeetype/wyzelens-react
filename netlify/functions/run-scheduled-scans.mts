@@ -283,16 +283,30 @@ export const handler: Handler = async (event) => {
           .update({ status: 'completed', updated_at: now.toISOString() })
           .eq('id', actualScanId);
         
-        // Count new items added during this refresh
-        const refreshStartTime = now.toISOString();
+        // Count new items added during this refresh (by is_new flag)
+        const { data: newsCount } = await supabase
+          .from('news_feed')
+          .select('id', { count: 'exact', head: true })
+          .eq('scan_id', actualScanId)
+          .eq('is_new', true);
         
-        const { data: newCounts } = await supabase
-          .rpc('count_new_items_for_scan', {
-            p_scan_id: actualScanId,
-            p_since: refreshStartTime
-          });
+        const { data: insightsCount } = await supabase
+          .from('insights')
+          .select('id', { count: 'exact', head: true })
+          .eq('scan_id', actualScanId)
+          .eq('is_new', true);
         
-        const counts = newCounts?.[0] || { new_news_count: 0, new_insights_count: 0, new_alerts_count: 0 };
+        const { data: alertsCount } = await supabase
+          .from('alerts')
+          .select('id', { count: 'exact', head: true })
+          .eq('scan_id', actualScanId)
+          .eq('is_new', true);
+        
+        const counts = {
+          new_news_count: newsCount || 0,
+          new_insights_count: insightsCount || 0,
+          new_alerts_count: alertsCount || 0
+        };
         
         console.log(`[Cron] ${actualScanId} - New items: ${counts.new_insights_count} insights, ${counts.new_alerts_count} alerts, ${counts.new_news_count} news`);
         
