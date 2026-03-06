@@ -42,7 +42,7 @@ const defaultSettings: AppSettings = {
     defaultIndustry: '',
   },
   scanPreferences: {
-    maxCompetitors: 15,
+    maxCompetitors: 5,    // ← Default for new users (Free plan)
     scanFrequency: 'manual',
     targetRegions: ['Global'],
     watchlist: [],
