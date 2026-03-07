@@ -10,6 +10,33 @@ export default function Pricing() {
   const { plan: currentPlan } = useSubscription()
   const [loading, setLoading] = useState('')
   
+  // Dynamic CTA text based on current plan
+  const getButtonText = (planId: string, isPaidPlan: boolean) => {
+    // Not logged in
+    if (!user) {
+      return isPaidPlan ? 'Start 14-day Trial' : 'Start Free'
+    }
+    
+    // Current plan
+    if (currentPlan === planId) {
+      return 'Current Plan'
+    }
+    
+    // Enterprise (always contact sales)
+    if (planId === 'enterprise') {
+      return 'Contact Sales'
+    }
+    
+    // Free plan
+    if (planId === 'free') {
+      return currentPlan === 'free' ? 'Current Plan' : 'Cancel Required'
+    }
+    
+    // Paid plans - dynamic switch text
+    const planName = planId.charAt(0).toUpperCase() + planId.slice(1)
+    return `Switch to ${planName}`
+  }
+  
   const plans = [
     {
       name: 'Free',
@@ -126,7 +153,13 @@ export default function Pricing() {
       return
     }
     
-    // Free plan: Go to dashboard
+    // 🚫 Block manual downgrade to Free (must cancel via Stripe Portal)
+    if (planId === 'free' && plan !== 'free') {
+      alert('To return to the Free plan, please cancel your paid subscription from Settings → Manage Subscription.\n\nYour paid features will remain active until the end of your current billing period.')
+      return
+    }
+    
+    // Free plan: Go to dashboard (only if already free)
     if (planId === 'free') {
       navigate('/dashboard')
       return
@@ -242,14 +275,27 @@ export default function Pricing() {
 
               <button
                 onClick={() => handleSelectPlan(plan.planId, plan.href)}
-                disabled={loading === plan.planId}
+                disabled={
+                  loading === plan.planId || 
+                  currentPlan === plan.planId ||
+                  (plan.planId === 'free' && currentPlan !== 'free')
+                }
                 className={`w-full py-3 px-4 rounded-lg font-semibold transition mb-6 ${
-                  plan.highlighted
+                  currentPlan === plan.planId
+                    ? 'bg-green-600 cursor-default'
+                    : plan.highlighted
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
                     : 'bg-slate-800 hover:bg-slate-700'
-                } ${loading === plan.planId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${
+                  (loading === plan.planId || currentPlan === plan.planId || (plan.planId === 'free' && currentPlan !== 'free'))
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : ''
+                }`}
               >
-                {loading === plan.planId ? 'Loading...' : plan.cta}
+                {loading === plan.planId 
+                  ? 'Loading...' 
+                  : getButtonText(plan.planId, plan.planId !== 'free' && plan.planId !== 'enterprise')
+                }
               </button>
 
               <div className="space-y-3">
