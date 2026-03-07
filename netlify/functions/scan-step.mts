@@ -661,6 +661,46 @@ async function stepFinalize(
   
   console.log(`[FINALIZE] Inserted ${insertedCompetitors.length} competitors`)
   
+  // ✅ RESET is_new FLAGS FOR EXISTING ITEMS (before inserting new ones)
+  if (isRefresh) {
+    console.log('[FINALIZE] Resetting is_new flags for existing items in this scan...')
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/alerts?scan_id=eq.${scanId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_new: false })
+    })
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/insights?scan_id=eq.${scanId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_new: false })
+    })
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/news_feed?scan_id=eq.${scanId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_new: false })
+    })
+    
+    console.log('[FINALIZE] All existing items marked as is_new=false')
+  }
+  
   // Write alerts - with duplicate title checking (per scan)
   let insertedAlerts: any[] = []
   
@@ -697,7 +737,9 @@ async function stepFinalize(
           description: a.description,
           priority: a.priority || 'info',
           category: a.category || 'news',
-          read: false
+          read: false,
+          is_new: true,
+          added_at: new Date().toISOString()
         }))
       )
     }
@@ -741,7 +783,9 @@ async function stepFinalize(
           description: i.description,
           confidence: i.confidence || 0.7,
           impact: i.impact || 'medium',
-          action_items: i.action_items || []
+          action_items: i.action_items || [],
+          is_new: true,
+          added_at: new Date().toISOString()
         }))
       )
     }
@@ -837,7 +881,9 @@ async function stepFinalize(
           relevance_score: n.daysAgo === 0 ? 0.9 : (n.daysAgo <= 3 ? 0.7 : 0.5),
           sentiment: 'neutral',
           tags: n.tags || [],
-          published_at: n.published_at // Use ACTUAL publication date from article
+          published_at: n.published_at, // Use ACTUAL publication date from article
+          is_new: true,
+          added_at: new Date().toISOString()
         }))
       )
       
@@ -985,10 +1031,10 @@ Use actual competitor names in market_leaders_share if they are major players.` 
       scan_id: scanId,
       user_id: userId,
       industry: industry,
-      triggered_by: isRefresh ? 'manual' : 'scheduled', // Will be overridden by run-scheduled-scans.mts if scheduled
+      triggered_by: 'manual', // Always 'manual' when called from frontend (scheduled overrides in run-scheduled-scans.mts)
       started_at: new Date().toISOString(),
       completed_at: new Date().toISOString(),
-      status: 'success',
+      status: 'completed',  // ← Was 'success', now 'completed' (matches ActivityView.tsx)
       new_alerts_count: insertedAlerts.length,
       new_insights_count: insertedInsights.length,
       new_news_count: insertedNews.length
