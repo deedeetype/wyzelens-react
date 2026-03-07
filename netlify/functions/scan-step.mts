@@ -1449,6 +1449,22 @@ Use the actual known competitor names from this list where possible: ${analyzed.
       insights_count: current.insights_count + insertedInsights.length,
       news_count: current.news_count + insertedNews.length
     })
+    
+    // ✅ CREATE REFRESH LOG (for manual refreshes)
+    console.log('[ANALYZE] Creating refresh_log entry...')
+    await supabasePost('refresh_logs', {
+      scan_id: scanId,
+      user_id: actualUserId,
+      industry: industry,
+      triggered_by: 'manual',
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      status: 'completed',
+      new_alerts_count: insertedAlerts.length,
+      new_insights_count: insertedInsights.length,
+      new_news_count: insertedNews.length
+    })
+    console.log('[ANALYZE] Refresh log created successfully')
   } else {
     // Set counts for new scan
     await supabasePatch('scans', `id=eq.${scanId}`, {
