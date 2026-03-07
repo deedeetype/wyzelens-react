@@ -44,20 +44,10 @@ export const handler: Handler = async (event) => {
     console.log(`[Cron] Current time: ${now.toISOString()} (UTC day ${now.getUTCDay()}, hour ${now.getUTCHours()})`);
     console.log(`[Cron] Windows: weekly=${isWeeklyWindow}, daily=${isDailyWindow}`);
     
-    // Fetch all completed scans with user subscription data
+    // Fetch all completed scans
     const { data: scans, error: scansError } = await supabase
       .from('scans')
-      .select(`
-        id,
-        user_id,
-        industry,
-        company_name,
-        company_url,
-        last_refreshed_at,
-        user_subscriptions!inner (
-          plan
-        )
-      `)
+      .select('id, user_id, industry, company_name, company_url, last_refreshed_at')
       .eq('status', 'completed');
     
     if (scansError) {
@@ -67,11 +57,27 @@ export const handler: Handler = async (event) => {
     
     console.log(`[Cron] Found ${scans?.length || 0} completed scans`);
     
+    // Fetch all user subscriptions (we'll match in-memory)
+    const { data: subscriptions, error: subsError } = await supabase
+      .from('user_subscriptions')
+      .select('user_id, plan');
+    
+    if (subsError) {
+      console.error('[Cron] Error fetching subscriptions:', subsError);
+      throw subsError;
+    }
+    
+    // Create a map: userId → plan
+    const userPlanMap = new Map<string, string>();
+    for (const sub of subscriptions || []) {
+      userPlanMap.set(sub.user_id, sub.plan);
+    }
+    
     const scansToRefresh: any[] = [];
     
     // Determine which scans to refresh based on plan + last refresh time
     for (const scan of scans || []) {
-      const plan = scan.user_subscriptions?.plan || 'free';
+      const plan = userPlanMap.get(scan.user_id) || 'free';
       const lastRefresh = scan.last_refreshed_at ? new Date(scan.last_refreshed_at) : null;
       const hoursSinceRefresh = lastRefresh ? (now.getTime() - lastRefresh.getTime()) / (1000 * 60 * 60) : 9999;
       
