@@ -626,110 +626,109 @@ export default function Dashboard() {
                   onClick={async () => {
                     if (!selectedScan) return
                     setIsScanning(true)
+                    setScanProgress('🔄 Starting refresh...')
+                    setScanProgressPercent(5)
+                    
                     try {
-                      setScanProgress('🔄 Refreshing profile data...')
-                      
-                      // Step 0: Use the CURRENT scan ID for refresh (no new scan creation)
                       const scanId = selectedScan.id
-                      const isRefresh = true
                       
-                      // Update scan metadata (mark as running)
-                      setScanProgress('🔄 Starting refresh...')
-                      setScanProgressPercent(5)
+                      // Step 1: Init (validates limits, resets is_new flags, creates refresh_log)
+                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
+                      setScanProgress('🔄 Validating refresh limits...')
+                      setScanProgressPercent(10)
+                      
                       await callStep('init', { 
                         industry: selectedScan.industry, 
                         companyUrl: selectedScan.company_url || undefined,
                         companyName: selectedScan.company_name || undefined,
-                        userId: user?.id
+                        userId: user?.id,
+                        isRefresh: true,      // ← EXPLICIT: This is a refresh
+                        isScheduled: false    // ← EXPLICIT: Manual refresh (not cron)
                       })
                       
-                      // Step 1: Fetch existing competitors (for insights/alerts generation)
+                      console.log(`[REFRESH] Init complete for scan ${scanId}`)
+                      
+                      // Step 2: Fetch latest news
                       if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('👥 Loading existing competitors...')
-                      setScanProgressPercent(10)
+                      setScanProgress('📰 Fetching latest news...')
+                      setScanProgressPercent(30)
                       
-                      const { data: existingCompetitors } = await supabase
-                        .from('competitors')
-                        .select('name')
-                        .eq('scan_id', scanId)
-                      
-                      const competitorNames = existingCompetitors?.map((c: any) => c.name) || []
-                      console.log(`[REFRESH] Found ${competitorNames.length} existing competitors`)
-                      
-                      // Step 2: Collect latest news
-                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('📰 Collecting latest news...')
-                      setScanProgressPercent(20)
-                      const { news, count: newsCount } = await callStep('news', { industry: selectedScan.industry })
-                      console.log(`[REFRESH] Collected ${newsCount} news articles`)
-                      
-                      // Step 3: Generate insights (NEW SPLIT STEP)
-                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('💡 Generating strategic insights...')
-                      setScanProgressPercent(40)
-                      const { insights, count: insightsCount } = await callStep('analyze-insights', {
-                        industry: selectedScan.industry,
+                      const newsResult = await callStep('news', { 
                         scanId,
-                        news,
-                        competitorNames,
+                        industry: selectedScan.industry,
                         userId: user?.id
                       })
-                      console.log(`[REFRESH] Generated ${insightsCount} insights`)
                       
-                      // Step 4: Generate alerts (NEW SPLIT STEP)
+                      console.log(`[REFRESH] Fetched ${newsResult.count || 0} news articles`)
+                      
+                      // Step 3: Analyze (generates insights + alerts)
                       if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('🔔 Generating alerts...')
+                      setScanProgress('💡 Analyzing insights & alerts...')
                       setScanProgressPercent(60)
-                      const { alerts, count: alertsCount } = await callStep('analyze-alerts', {
-                        industry: selectedScan.industry,
-                        scanId,
-                        news,
-                        competitorNames,
-                        userId: user?.id
-                      })
-                      console.log(`[REFRESH] Generated ${alertsCount} alerts`)
                       
-                      // Step 5: Finalize (write all data to DB, mark scan as completed)
-                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('💾 Saving data...')
-                      setScanProgressPercent(80)
-                      const results = await callStep('finalize', {
-                        industry: selectedScan.industry,
+                      const analyzeResult = await callStep('analyze', {
                         scanId,
-                        competitors: [], // Don't re-insert competitors on refresh
-                        insights,
-                        alerts,
-                        news,
-                        isRefresh: true,
-                        userId: user?.id
+                        industry: selectedScan.industry,
+                        news: newsResult.news || [],
+                        userId: user?.id,
+                        isRefresh: true
                       })
+                      
+                      console.log(`[REFRESH] Generated ${analyzeResult.insights || 0} insights, ${analyzeResult.alerts || 0} alerts`)
+                      
+                      // Mark scan as completed
+                      await supabase
+                        .from('scans')
+                        .update({ status: 'completed', updated_at: new Date().toISOString() })
+                        .eq('id', scanId)
+                      
+                      // Update refresh_log to completed
+                      const { data: logs } = await supabase
+                        .from('refresh_logs')
+                        .select('id')
+                        .eq('scan_id', scanId)
+                        .eq('status', 'running')
+                        .order('started_at', { ascending: false })
+                        .limit(1)
+                      
+                      if (logs && logs.length > 0) {
+                        await supabase
+                          .from('refresh_logs')
+                          .update({
+                            status: 'completed',
+                            completed_at: new Date().toISOString(),
+                            new_news_count: newsResult.count || 0,
+                            new_insights_count: analyzeResult.insights || 0,
+                            new_alerts_count: analyzeResult.alerts || 0
+                          })
+                          .eq('id', logs[0].id)
+                      }
                       
                       setScanProgressPercent(100)
-                      setScanProgress(`✅ Refreshed! ${results.alerts} new alerts, ${results.insights} insights, ${results.news} articles`)
+                      setScanProgress(`✅ Refresh complete! ${analyzeResult.alerts || 0} alerts, ${analyzeResult.insights || 0} insights, ${newsResult.count || 0} news`)
                       
-                      // Refetch ALL data to see new content
+                      // Refetch data
                       await refetchScans()
-                      await refetchCompetitors()
                       await refetchInsights()
-                      // Alerts and News contexts will auto-refetch on scanId change or manual trigger
-                      window.location.reload() // Force full page reload to ensure all contexts refresh
                       
                       setTimeout(() => {
                         setIsScanning(false)
                         setScanProgress('')
                         setScanProgressPercent(0)
-                      }, 2500)
+                        window.location.reload() // Force reload to update all contexts
+                      }, 2000)
                       
                     } catch (error: any) {
-                      if (error.message?.includes('Refresh limit reached')) {
-                        // Handle refresh limit error - show upgrade modal
+                      console.error('[REFRESH] Error:', error)
+                      
+                      // Check if it's a plan/refresh limit error
+                      if (error.message?.includes('limit reached') || error.message?.includes('Plan limit')) {
                         setScanProgress('❌ ' + error.message)
                         setScanProgressPercent(0)
                         
                         setTimeout(() => {
                           setIsScanning(false)
                           setScanProgress('')
-                          setScanProgressPercent(0)
                           setUpgradeReason(error.message)
                           setShowUpgradeModal(true)
                         }, 2000)

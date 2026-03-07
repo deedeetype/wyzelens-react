@@ -274,30 +274,41 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
         
         console.log(`[stepInit] Manual refresh allowed: ${manualRefreshCount}/${dailyLimit} used today`)
         
-        // OLD: Hourly/daily limits (now removed in favor of daily counter)
-        const refreshLimits: Record<string, { hours: number, label: string }> = {
-          free: { hours: 24, label: 'daily' },        // just for auto-refresh
-          starter: { hours: 24, label: 'daily' },      // just for auto-refresh
-          pro: { hours: 1, label: 'hourly' },          // 1 hour
-          business: { hours: 1, label: 'hourly' },     // 1 hour
-          enterprise: { hours: 1, label: 'hourly' }    // 1 hour
-        }
-        
-        const limit = refreshLimits[plan] || refreshLimits.free
-        
-        if (hoursSinceRefresh < limit.hours) {
-          const hoursRemaining = Math.ceil(limit.hours - hoursSinceRefresh)
-          console.error(`[stepInit] Refresh limit reached: last refresh ${hoursSinceRefresh.toFixed(1)}h ago, need ${limit.hours}h`)
-          throw new Error(`Refresh limit reached. Your ${plan} plan allows ${limit.label} refreshes. Please wait ${hoursRemaining} hour${hoursRemaining > 1 ? 's' : ''} or upgrade for more frequent updates.`)
-        }
-        
-        console.log(`[stepInit] Refresh allowed: ${hoursSinceRefresh.toFixed(1)}h since last refresh (limit: ${limit.hours}h)`)
+        // ✅ Daily count limit is the ONLY manual refresh limit
+        // Auto-refresh frequency (weekly/daily/hourly) is handled by cron, not here
       }
       } else {
         console.log('[stepInit] Scheduled refresh - skipping manual refresh time limits')
       }
       // ✅ END REFRESH TIME LIMITS CHECK
       
+      // ═══════════════════════════════════════════════════════════════
+      // 🔄 CREATE REFRESH LOG (for manual refreshes only, scheduled creates its own)
+      // ═══════════════════════════════════════════════════════════════
+      if (!isScheduled) {
+        console.log(`[stepInit] Creating refresh_log for manual refresh`)
+        await supabasePost('refresh_logs', {
+          scan_id: existingScan.id,
+          user_id: actualUserId,
+          industry,
+          status: 'running',
+          triggered_by: 'manual',
+          started_at: new Date().toISOString()
+        })
+      }
+      
+      // ═══════════════════════════════════════════════════════════════
+      // 🧹 RESET is_new FLAGS (prevent old items from showing NEW badge)
+      // ═══════════════════════════════════════════════════════════════
+      console.log(`[stepInit] Resetting is_new flags for scan ${existingScan.id}`)
+      
+      await supabasePatch('news_feed', `scan_id=eq.${existingScan.id}`, { is_new: false })
+      await supabasePatch('insights', `scan_id=eq.${existingScan.id}`, { is_new: false })
+      await supabasePatch('alerts', `scan_id=eq.${existingScan.id}`, { is_new: false })
+      
+      console.log(`[stepInit] Flags reset complete`)
+      
+      // Update scan metadata
       await supabasePatch('scans', `id=eq.${existingScan.id}`, {
         status: 'running',
         last_refreshed_at: new Date().toISOString(),
