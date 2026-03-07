@@ -46,7 +46,7 @@ export const handler: Handler = async (event) => {
     console.log('[PORTAL] Fetching subscription for userId:', userId);
     
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/user_subscription?user_id=eq.${userId}&select=stripe_customer_id`,
+      `${SUPABASE_URL}/rest/v1/user_subscriptions?user_id=eq.${userId}&select=stripe_customer_id`,
       {
         headers: {
           'apikey': SUPABASE_KEY!,
