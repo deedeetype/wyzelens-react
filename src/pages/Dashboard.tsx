@@ -661,9 +661,9 @@ export default function Dashboard() {
                       
                       console.log(`[REFRESH] Fetched ${newsResult.count || 0} news articles`)
                       
-                      // Step 3: Analyze (generates insights + alerts)
+                      // Step 3: Analyze (generates insights + alerts + writes to DB + creates refresh_log)
                       if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('💡 Analyzing insights & alerts...')
+                      setScanProgress('💡 Analyzing & saving...')
                       setScanProgressPercent(60)
                       
                       const analyzeResult = await callStep('analyze', {
@@ -674,72 +674,10 @@ export default function Dashboard() {
                         isRefresh: true
                       })
                       
-                      console.log(`[REFRESH] Generated ${analyzeResult.insights || 0} insights, ${analyzeResult.alerts || 0} alerts`)
-                      
-                      // Count NEW items (is_new=true)
-                      const { count: newNewsCount } = await supabase
-                        .from('news_feed')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('scan_id', scanId)
-                        .eq('is_new', true)
-                      
-                      const { count: newInsightsCount } = await supabase
-                        .from('insights')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('scan_id', scanId)
-                        .eq('is_new', true)
-                      
-                      const { count: newAlertsCount } = await supabase
-                        .from('alerts')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('scan_id', scanId)
-                        .eq('is_new', true)
-                      
-                      console.log(`[REFRESH] Counted NEW items: ${newAlertsCount || 0} alerts, ${newInsightsCount || 0} insights, ${newNewsCount || 0} news`)
-                      
-                      // Mark scan as completed
-                      await supabase
-                        .from('scans')
-                        .update({ status: 'completed', updated_at: new Date().toISOString() })
-                        .eq('id', scanId)
-                      
-                      // Update refresh_log to completed
-                      const { data: logs, error: logsError } = await supabase
-                        .from('refresh_logs')
-                        .select('id')
-                        .eq('scan_id', scanId)
-                        .eq('status', 'running')
-                        .order('started_at', { ascending: false })
-                        .limit(1)
-                      
-                      if (logsError) {
-                        console.error('[REFRESH] Error fetching refresh_log:', logsError)
-                      }
-                      
-                      if (logs && logs.length > 0) {
-                        console.log(`[REFRESH] Updating refresh_log ${logs[0].id} to completed`)
-                        const { error: updateError } = await supabase
-                          .from('refresh_logs')
-                          .update({
-                            status: 'completed',
-                            completed_at: new Date().toISOString(),
-                            new_news_count: newNewsCount || 0,
-                            new_insights_count: newInsightsCount || 0,
-                            new_alerts_count: newAlertsCount || 0
-                          })
-                          .eq('id', logs[0].id)
-                        
-                        if (updateError) {
-                          console.error('[REFRESH] Error updating refresh_log:', updateError)
-                        } else {
-                          console.log('[REFRESH] refresh_log updated successfully')
-                        }
-                      } else {
-                        console.warn('[REFRESH] No running refresh_log found for scan', scanId)
-                      }
+                      console.log(`[REFRESH] Analyze complete: ${analyzeResult.alerts || 0} alerts, ${analyzeResult.insights || 0} insights, ${analyzeResult.news || 0} news`)
                       
                       setScanProgressPercent(100)
-                      setScanProgress(`✅ Refresh complete! ${newAlertsCount || 0} alerts, ${newInsightsCount || 0} insights, ${newNewsCount || 0} news`)
+                      setScanProgress(`✅ Refresh complete! ${analyzeResult.alerts || 0} alerts, ${analyzeResult.insights || 0} insights, ${analyzeResult.news || 0} news`)
                       
                       // Refetch data
                       await refetchScans()

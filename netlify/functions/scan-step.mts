@@ -283,21 +283,6 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
       // ✅ END REFRESH TIME LIMITS CHECK
       
       // ═══════════════════════════════════════════════════════════════
-      // 🔄 CREATE REFRESH LOG (for manual refreshes only, scheduled creates its own)
-      // ═══════════════════════════════════════════════════════════════
-      if (!isScheduled) {
-        console.log(`[stepInit] Creating refresh_log for manual refresh`)
-        await supabasePost('refresh_logs', {
-          scan_id: existingScan.id,
-          user_id: actualUserId,
-          industry,
-          status: 'running',
-          triggered_by: 'manual',
-          started_at: new Date().toISOString()
-        })
-      }
-      
-      // ═══════════════════════════════════════════════════════════════
       // 🧹 RESET is_new FLAGS (prevent old items from showing NEW badge)
       // ═══════════════════════════════════════════════════════════════
       console.log(`[stepInit] Resetting is_new flags for scan ${existingScan.id}`)
