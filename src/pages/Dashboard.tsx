@@ -987,21 +987,19 @@ export default function Dashboard() {
               try {
                 setScanProgress('🗑️ Deleting profile and all data...')
                 
-                // TODO SECURITY: Replace with user-scoped policy after Clerk auth
-                // Currently uses public DELETE policy (demo mode only)
-                // Delete from Supabase (cascade will handle related data)
-                const token = await getToken({ template: 'supabase' })
-                const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/scans?id=eq.${id}`, {
-                  method: 'DELETE',
-                  headers: {
-                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-                    'Authorization': `Bearer ${token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                  }
+                // Delete via backend function (uses SERVICE_ROLE_KEY to bypass RLS)
+                const res = await fetch('/.netlify/functions/delete-scan', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    scanId: id,
+                    userId: user?.id
+                  })
                 })
                 
                 if (!res.ok) {
-                  const text = await res.text()
-                  throw new Error(`Delete failed: ${res.status} ${text}`)
+                  const errorData = await res.json()
+                  throw new Error(errorData.error || `Delete failed: ${res.status}`)
                 }
                 
                 setScanProgress('✅ Profile deleted')
