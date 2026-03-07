@@ -178,8 +178,9 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   // Use Clerk ID directly (TEXT, no conversion needed)
   const actualUserId = userId
   
-  // Check for existing completed profile with same industry (and optionally same company_url)
-  let queryUrl = `${SUPABASE_URL}/rest/v1/scans?user_id=eq.${actualUserId}&industry=eq.${encodeURIComponent(industry)}&status=eq.completed&order=created_at.desc&limit=1`
+  // Check for existing profile with same industry (completed OR running) and optionally same company_url
+  // Include 'running' to reuse scans that didn't complete (e.g., timeout, error, etc.)
+  let queryUrl = `${SUPABASE_URL}/rest/v1/scans?user_id=eq.${actualUserId}&industry=eq.${encodeURIComponent(industry)}&status=in.(completed,running)&order=created_at.desc&limit=1`
   
   // If company_url is provided, filter by it as well
   if (companyUrl) {
