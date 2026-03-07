@@ -44,7 +44,7 @@ export const handler: Handler = async (event) => {
 
     // Fetch user's subscription from Supabase to get Stripe customer ID
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${userId}&select=stripe_customer_id`,
+      `${SUPABASE_URL}/rest/v1/user_subscription?user_id=eq.${userId}&select=stripe_customer_id`,
       {
         headers: {
           'apikey': SUPABASE_KEY!,
