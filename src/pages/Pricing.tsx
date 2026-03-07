@@ -154,7 +154,7 @@ export default function Pricing() {
     }
     
     // 🚫 Block manual downgrade to Free (must cancel via Stripe Portal)
-    if (planId === 'free' && plan !== 'free') {
+    if (planId === 'free' && currentPlan !== 'free') {
       alert('To return to the Free plan, please cancel your paid subscription from Settings → Manage Subscription.\n\nYour paid features will remain active until the end of your current billing period.')
       return
     }
