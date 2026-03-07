@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useUser } from '@clerk/react'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw, Lock } from 'lucide-react'
+import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw, Lock, Crown, Settings } from 'lucide-react'
 import AutomatedScansSettings from './AutomatedScansSettings'
 import UpgradeModal from './UpgradeModal'
 import { INDUSTRIES } from '@/constants/industries'
@@ -136,6 +136,52 @@ export default function SettingsView() {
       {/* Profile Section */}
       {activeSection === 'profile' && (
         <>
+      {/* Subscription Management - Only show for paid plans */}
+      {plan !== 'free' && (
+        <div className={`${cardClass} mb-6`}>
+          <h3 className="text-lg font-bold text-white light:text-slate-900 mb-4 flex items-center gap-2">
+            <Crown className="w-5 h-5 text-indigo-400" />
+            Subscription Management
+          </h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-slate-800/50 light:bg-slate-50 rounded-lg border border-slate-700 light:border-slate-200">
+              <div>
+                <div className="text-sm text-slate-400 light:text-slate-600 mb-1">Current Plan</div>
+                <div className="text-lg font-bold text-white light:text-slate-900 capitalize">{plan}</div>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/.netlify/functions/create-portal-session', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: user?.id })
+                    })
+                    const data = await response.json()
+                    if (data.url) {
+                      window.location.href = data.url
+                    } else {
+                      alert('Unable to open billing portal. Please try again.')
+                    }
+                  } catch (error) {
+                    console.error('Portal error:', error)
+                    alert('Failed to open billing portal. Please try again.')
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Manage Subscription
+              </button>
+            </div>
+            <p className="text-sm text-slate-500 light:text-slate-600">
+              Update payment method, change plan, view invoices, or cancel your subscription.
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* Appearance */}
       <div className={`${cardClass} mb-6`}>
         <h3 className="text-lg font-bold text-white light:text-slate-900 mb-4 flex items-center gap-2">

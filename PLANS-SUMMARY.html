@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WyzeLens - Plans Summary</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th {
+            background: #0f172a;
+            color: white;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #1e293b;
+        }
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background: #f8fafc;
+        }
+        .feature-name {
+            font-weight: 500;
+            color: #334155;
+        }
+        .plan-header {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .price {
+            color: #6366f1;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .free { color: #10b981; }
+        .starter { color: #3b82f6; }
+        .pro { color: #8b5cf6; }
+        .business { color: #ec4899; }
+        .enterprise { color: #f59e0b; }
+        .yes { 
+            color: #10b981; 
+            font-weight: 600;
+        }
+        .no { 
+            color: #ef4444; 
+            font-weight: 600;
+        }
+        .value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .contact {
+            color: #f59e0b;
+            font-weight: 600;
+            font-style: italic;
+        }
+        .section-header {
+            background: #f1f5f9 !important;
+            font-weight: 700;
+            color: #475569;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .footer h3 {
+            color: #1e293b;
+            margin-top: 0;
+        }
+        .footer p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+        .footer a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <h1>WyzeLens - Plans & Pricing Summary</h1>
+    <p class="subtitle">Updated March 6, 2026 | Production pricing structure</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Feature</th>
+                <th class="plan-header free">FREE</th>
+                <th class="plan-header starter">STARTER</th>
+                <th class="plan-header pro">PRO</th>
+                <th class="plan-header business">BUSINESS</th>
+                <th class="plan-header enterprise">ENTERPRISE</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Pricing -->
+            <tr>
+                <td class="feature-name">💰 Monthly Price</td>
+                <td class="price free">$0</td>
+                <td class="price starter">$8</td>
+                <td class="price pro">$20</td>
+                <td class="price business">$49</td>
+                <td class="contact">Contact Sales</td>
+            </tr>
+
+            <!-- Core Limits -->
+            <tr>
+                <td colspan="6" class="section-header">📊 Core Limits</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Industry Profiles</td>
+                <td class="value">1</td>
+                <td class="value">3</td>
+                <td class="value">5</td>
+                <td class="value">10</td>
+                <td class="contact">Unlimited</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Max Competitors per Scan</td>
+                <td class="value">5</td>
+                <td class="value">10</td>
+                <td class="value">15</td>
+                <td class="value">Unlimited</td>
+                <td class="contact">Unlimited</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Manual Refreshes</td>
+                <td class="value">1/day</td>
+                <td class="value">3/day</td>
+                <td class="value">Unlimited</td>
+                <td class="value">Unlimited</td>
+                <td class="contact">Unlimited</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Automated Refresh</td>
+                <td class="no">❌ No</td>
+                <td class="value">Daily</td>
+                <td class="value">Hourly</td>
+                <td class="value">Hourly</td>
+                <td class="contact">Hourly</td>
+            </tr>
+            <tr>
+                <td class="feature-name">History Retention</td>
+                <td class="value">7 days</td>
+                <td class="value">30 days</td>
+                <td class="value">90 days</td>
+                <td class="value">Unlimited</td>
+                <td class="contact">Unlimited</td>
+            </tr>
+
+            <!-- Features -->
+            <tr>
+                <td colspan="6" class="section-header">✨ Features</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Custom Competitor Watchlist</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Regional Filters</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Export Reports</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Email Alerts</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Weekly Digest</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Slack Webhook</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">API Access</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">White-label Reports</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Dedicated Account Manager</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="no">❌ No</td>
+                <td class="yes">✅ Yes</td>
+            </tr>
+
+            <!-- Support -->
+            <tr>
+                <td colspan="6" class="section-header">🎯 Support</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Support Level</td>
+                <td class="value">Email</td>
+                <td class="value">Priority Email</td>
+                <td class="value">Priority Support</td>
+                <td class="value">Dedicated Support</td>
+                <td class="contact">White-Glove + SLA</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <h3>📝 Notes</h3>
+        <p><strong>Free Trial:</strong> All paid plans include a 14-day free trial. No credit card required to start.</p>
+        <p><strong>History Cleanup:</strong> Automated cleanup cron job will be implemented later (currently for display only).</p>
+        <p><strong>Manual Refresh Counter:</strong> Enforced daily (UTC-based). Counter resets at midnight UTC.</p>
+        <p><strong>Enterprise Pricing:</strong> Custom pricing based on specific needs. Contact <a href="mailto:david.laborieux@labwyze.com">david.laborieux@labwyze.com</a></p>
+        <p><strong>Cancellation:</strong> Cancel anytime • No long-term contracts • Immediate access to paid features</p>
+    </div>
+</body>
+</html>

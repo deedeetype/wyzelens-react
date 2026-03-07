@@ -39,11 +39,11 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Price IDs from Stripe Dashboard
+    // Price IDs from Stripe Dashboard (updated Mar 6, 2026)
     const priceIds: Record<string, string> = {
-      starter: process.env.STRIPE_PRICE_STARTER!,
-      pro: process.env.STRIPE_PRICE_PRO!,
-      business: process.env.STRIPE_PRICE_BUSINESS!,
+      starter: 'price_1T8CJm01YX9kum4IVRj02y9d',   // $8/month
+      pro: 'price_1T8CLZ01YX9kum4IXDSg6IZL',       // $20/month
+      business: 'price_1T8CMT01YX9kum4In8GGMGbG',  // $49/month
     };
 
     const priceId = priceIds[planId];
