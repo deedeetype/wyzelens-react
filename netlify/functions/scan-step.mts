@@ -1267,23 +1267,77 @@ JSON object with ticker as key: {"AAPL": {"price": 178.50, "currency": "USD", "c
     })
   ) : []
 
-  // Always insert new alerts (accumulate over time)
-  const insertedAlerts = alerts.length > 0 ? await supabasePost('alerts',
-    alerts.map((a: any) => ({
+  // Fetch existing alert titles to avoid duplicates
+  let existingAlertTitles = new Set<string>()
+  if (isRefresh) {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/alerts?scan_id=eq.${scanId}&select=title`,
+        {
+          headers: {
+            'apikey': SUPABASE_KEY!,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          }
+        }
+      )
+      const existingAlerts = await res.json()
+      existingAlertTitles = new Set(existingAlerts.map((a: any) => a.title))
+      console.log(`[REFRESH] Found ${existingAlertTitles.size} existing alert titles`)
+    } catch (e) {
+      console.error('Error fetching existing alerts:', e)
+    }
+  }
+
+  // Filter out alerts with duplicate titles
+  const newAlerts = alerts.filter((a: any) => !existingAlertTitles.has(a.title))
+  console.log(`[REFRESH] Alerts: ${alerts.length} generated, ${newAlerts.length} unique (filtered ${alerts.length - newAlerts.length} duplicates)`)
+
+  // Always insert new alerts (accumulate over time, skip duplicates)
+  const insertedAlerts = newAlerts.length > 0 ? await supabasePost('alerts',
+    newAlerts.map((a: any) => ({
       user_id: actualUserId, scan_id: scanId,
       competitor_id: insertedCompetitors[0]?.id || null,
       title: a.title, description: a.description,
-      priority: a.priority || 'info', category: a.category || 'news', read: false
+      priority: a.priority || 'info', category: a.category || 'news', read: false,
+      is_new: true,
+      added_at: new Date().toISOString()
     }))
   ) : []
 
-  // Always insert new insights (accumulate over time)
-  const insertedInsights = insights.length > 0 ? await supabasePost('insights',
-    insights.map((i: any) => ({
+  // Fetch existing insight titles to avoid duplicates
+  let existingInsightTitles = new Set<string>()
+  if (isRefresh) {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/insights?scan_id=eq.${scanId}&select=title`,
+        {
+          headers: {
+            'apikey': SUPABASE_KEY!,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          }
+        }
+      )
+      const existingInsights = await res.json()
+      existingInsightTitles = new Set(existingInsights.map((i: any) => i.title))
+      console.log(`[REFRESH] Found ${existingInsightTitles.size} existing insight titles`)
+    } catch (e) {
+      console.error('Error fetching existing insights:', e)
+    }
+  }
+
+  // Filter out insights with duplicate titles
+  const newInsights = insights.filter((i: any) => !existingInsightTitles.has(i.title))
+  console.log(`[REFRESH] Insights: ${insights.length} generated, ${newInsights.length} unique (filtered ${insights.length - newInsights.length} duplicates)`)
+
+  // Always insert new insights (accumulate over time, skip duplicates)
+  const insertedInsights = newInsights.length > 0 ? await supabasePost('insights',
+    newInsights.map((i: any) => ({
       user_id: actualUserId, scan_id: scanId,
       type: i.type || 'recommendation', title: i.title, description: i.description,
       confidence: i.confidence || 0.7, impact: i.impact || 'medium',
-      action_items: i.action_items || []
+      action_items: i.action_items || [],
+      is_new: true,
+      added_at: new Date().toISOString()
     }))
   ) : []
 
