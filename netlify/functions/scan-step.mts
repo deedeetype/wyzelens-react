@@ -213,7 +213,6 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
         
         // Refresh limits by plan (manual refreshes only)
         // FREE: 1/day, STARTER: 3/day, PRO+: unlimited
-        const now = new Date()
         const startOfDayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
         
         // Count manual refreshes today (UTC)
