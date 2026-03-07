@@ -200,9 +200,10 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   console.log(`[stepInit] Looking for existing ${industry} profile (companyUrl: ${companyUrl || 'null'})`)
   console.log(`[stepInit] Found ${existingProfiles.length} existing profiles`)
   
-  // Default to REFRESH mode if not explicitly set (backward compatibility)
-  const actualIsRefresh = isRefresh !== false
-  console.log(`[stepInit] Mode: ${actualIsRefresh ? 'REFRESH' : 'RESCAN'} (isRefresh param: ${isRefresh})`)
+  // isRefresh explicitly passed → honor it
+  // isRefresh not passed (undefined) → default to REFRESH for existing profiles (backward compat)
+  const actualIsRefresh = isRefresh === undefined ? true : isRefresh
+  console.log(`[stepInit] Mode: ${actualIsRefresh ? 'REFRESH' : 'RESCAN'} (isRefresh param: ${isRefresh}, resolved: ${actualIsRefresh})`)
   
   if (existingProfiles && existingProfiles.length > 0) {
     const existingScan = existingProfiles[0]
