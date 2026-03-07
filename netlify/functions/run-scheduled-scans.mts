@@ -35,77 +35,106 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    console.log('[Cron] Starting scheduled scan check...');
+    console.log('[Cron] Starting plan-based auto-refresh check...');
     
-    // Get current time
     const now = new Date();
-    const currentHour = now.getUTCHours();
-    const currentDay = now.getUTCDay();
-    const currentDate = now.getUTCDate();
+    const isWeeklyWindow = now.getUTCDay() === 0 && now.getUTCHours() === 0; // Sunday midnight UTC
+    const isDailyWindow = now.getUTCHours() === 0; // Every day midnight UTC
     
-    // Fetch all enabled schedules
-    const { data: schedules, error: scheduleError } = await supabase
-      .from('scan_schedules')
+    console.log(`[Cron] Current time: ${now.toISOString()} (UTC day ${now.getUTCDay()}, hour ${now.getUTCHours()})`);
+    console.log(`[Cron] Windows: weekly=${isWeeklyWindow}, daily=${isDailyWindow}`);
+    
+    // Fetch all completed scans with user subscription data
+    const { data: scans, error: scansError } = await supabase
+      .from('scans')
       .select(`
-        *,
-        scans:scan_id (
-          id,
-          industry,
-          company_name,
-          company_url,
-          user_id
+        id,
+        user_id,
+        industry,
+        company_name,
+        company_url,
+        last_refreshed_at,
+        user_subscriptions!inner (
+          plan
         )
       `)
-      .eq('enabled', true);
+      .eq('status', 'completed');
     
-    if (scheduleError) {
-      console.error('[Cron] Error fetching schedules:', scheduleError);
-      throw scheduleError;
+    if (scansError) {
+      console.error('[Cron] Error fetching scans:', scansError);
+      throw scansError;
     }
     
-    console.log(`[Cron] Found ${schedules?.length || 0} enabled schedules`);
+    console.log(`[Cron] Found ${scans?.length || 0} completed scans`);
     
-    const scansToRun = [];
-    const schedulesToUpdate = [];
+    const scansToRefresh: any[] = [];
     
-    // Check each schedule
-    for (const schedule of schedules || []) {
-      const shouldRun = checkIfScheduleShouldRun(schedule, now);
+    // Determine which scans to refresh based on plan + last refresh time
+    for (const scan of scans || []) {
+      const plan = scan.user_subscriptions?.plan || 'free';
+      const lastRefresh = scan.last_refreshed_at ? new Date(scan.last_refreshed_at) : null;
+      const hoursSinceRefresh = lastRefresh ? (now.getTime() - lastRefresh.getTime()) / (1000 * 60 * 60) : 9999;
       
-      if (shouldRun) {
-        console.log(`[Cron] Schedule ${schedule.id} is due for scan ${schedule.scan_id}`);
-        scansToRun.push({
-          scanId: schedule.scan_id,
-          schedule: schedule,
-          scan: schedule.scans
-        });
+      let shouldRefresh = false;
+      let reason = '';
+      
+      // Plan-based refresh logic
+      switch (plan) {
+        case 'free':
+          // Weekly: Sunday midnight UTC (if >6.5 days since last refresh)
+          if (isWeeklyWindow && hoursSinceRefresh >= 156) {
+            shouldRefresh = true;
+            reason = 'weekly (free plan)';
+          }
+          break;
         
-        // Calculate next run time
-        const nextRun = calculateNextRun(schedule, now);
-        schedulesToUpdate.push({
-          id: schedule.id,
-          last_run_at: now.toISOString(),
-          next_run_at: nextRun.toISOString()
-        });
+        case 'starter':
+          // Daily: Every day midnight UTC (if >23 hours since last refresh)
+          if (isDailyWindow && hoursSinceRefresh >= 23) {
+            shouldRefresh = true;
+            reason = 'daily (starter plan)';
+          }
+          break;
+        
+        case 'pro':
+        case 'business':
+        case 'enterprise':
+          // Hourly: Every hour (if >0.98 hours since last refresh)
+          if (hoursSinceRefresh >= 0.98) {
+            shouldRefresh = true;
+            reason = `hourly (${plan} plan)`;
+          }
+          break;
+        
+        default:
+          console.warn(`[Cron] Unknown plan "${plan}" for scan ${scan.id}, treating as free`);
+          if (isWeeklyWindow && hoursSinceRefresh >= 156) {
+            shouldRefresh = true;
+            reason = 'weekly (unknown plan, default to free)';
+          }
+      }
+      
+      if (shouldRefresh) {
+        console.log(`[Cron] Scan ${scan.id} (${plan}) is due: ${reason} (last refresh: ${hoursSinceRefresh.toFixed(1)}h ago)`);
+        scansToRefresh.push({ scan, reason });
       }
     }
     
-    console.log(`[Cron] ${scansToRun.length} scans to run`);
+    console.log(`[Cron] ${scansToRefresh.length} scans to refresh`);
     
-    // Execute each scan - ALL 4 STEPS
+    // Execute refreshes
     const results = [];
-    for (const { scanId, scan, schedule } of scansToRun) {
+    for (const { scan, reason } of scansToRefresh) {
       const scanStartTime = Date.now();
-      const SCAN_TIMEOUT_MS = 9 * 60 * 1000; // 9 minutes (Netlify has 10 min limit)
+      const SCAN_TIMEOUT_MS = 9 * 60 * 1000; // 9 minutes
       
       let refreshLogId: number | undefined;
       let actualScanId: string | undefined;
       
       try {
-        console.log(`[Cron] Triggering full refresh for scan ${scanId}`);
+        console.log(`[Cron] Refreshing scan ${scan.id} (${reason})`);
         
-        // Step 1: Init (with explicit isRefresh flag)
-        console.log(`[Cron] ${scanId} - Step 1: Init (refresh mode)`);
+        // Step 1: Init (refresh mode)
         const step1Response = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -116,22 +145,20 @@ export const handler: Handler = async (event) => {
             companyName: scan.company_name,
             userId: scan.user_id,
             isScheduled: true,
-            isRefresh: true  // ← Explicit: This is a refresh, not a new scan
+            isRefresh: true
           })
         });
         
         const step1Result = await step1Response.json();
         
         if (!step1Result.success) {
-          throw new Error(`Step 1 failed: ${step1Result.error || 'Unknown error'}`);
+          throw new Error(`Init failed: ${step1Result.error || 'Unknown error'}`);
         }
         
         actualScanId = step1Result.scanId;
-        const isRefresh = step1Result.isRefresh;
-        console.log(`[Cron] ${scanId} - Step 1 complete, actual scanId: ${actualScanId}, isRefresh: ${isRefresh}`);
+        console.log(`[Cron] ${scan.id} - Init complete, scanId: ${actualScanId}`);
         
-        // Log the refresh start
-        const refreshStartTime = now.toISOString();
+        // Log refresh start
         const { data: logData, error: logError } = await supabase
           .from('refresh_logs')
           .insert({
@@ -140,7 +167,7 @@ export const handler: Handler = async (event) => {
             industry: scan.industry,
             status: 'running',
             triggered_by: 'scheduled',
-            started_at: refreshStartTime
+            started_at: now.toISOString()
           })
           .select('id')
           .single();
@@ -151,139 +178,55 @@ export const handler: Handler = async (event) => {
         
         refreshLogId = logData?.id;
         
-        if (isRefresh) {
-          // REFRESH MODE: Skip competitors, only update news + analyze
-          console.log(`[Cron] ${actualScanId} - REFRESH MODE: Fetching news + analyzing`);
-          
-          // Check timeout before each step
-          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
-            throw new Error('Scan timeout exceeded before news step');
-          }
-          
-          // Step: News (fetch first to get fresh data)
-          console.log(`[Cron] ${actualScanId} - Fetching news`);
-          const newsResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              step: 'news',
-              scanId: actualScanId,
-              industry: scan.industry,
-              userId: scan.user_id
-            })
-          });
-          
-          const newsResult = await newsResponse.json();
-          if (!newsResult.success) {
-            throw new Error(`News fetch failed: ${newsResult.error || 'Unknown error'}`);
-          }
-          console.log(`[Cron] ${actualScanId} - News fetched successfully`);
-          
-          // Check timeout before analyze step
-          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
-            throw new Error('Scan timeout exceeded before analyze step');
-          }
-          
-          // Step: Analyze (generate insights/alerts from fresh news)
-          console.log(`[Cron] ${actualScanId} - Analyzing (insights + alerts)`);
-          const analyzeResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              step: 'analyze',
-              scanId: actualScanId,
-              industry: scan.industry,
-              userId: scan.user_id,
-              news: newsResult.news || [],
-              isRefresh: true
-            })
-          });
-          
-          const analyzeResult = await analyzeResponse.json();
-          if (!analyzeResult.success) {
-            throw new Error(`Analysis failed: ${analyzeResult.error || 'Unknown error'}`);
-          }
-          console.log(`[Cron] ${actualScanId} - Analysis complete (insights/alerts updated)`);
-          
-        } else {
-          // NEW SCAN MODE: Execute all steps
-          console.log(`[Cron] ${actualScanId} - NEW SCAN MODE: Executing full scan`);
-          
-          // Check timeout before competitors step
-          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
-            throw new Error('Scan timeout exceeded before competitors step');
-          }
-          
-          // Step: Competitors
-          console.log(`[Cron] ${actualScanId} - Fetching competitors`);
-          const competitorsResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              step: 'competitors',
-              scanId: actualScanId,
-              industry: scan.industry,
-              userId: scan.user_id
-            })
-          });
-          
-          const competitorsResult = await competitorsResponse.json();
-          if (!competitorsResult.success) {
-            throw new Error(`Competitors fetch failed: ${competitorsResult.error || 'Unknown error'}`);
-          }
-          console.log(`[Cron] ${actualScanId} - Competitors fetched`);
-          
-          // Check timeout before news step
-          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
-            throw new Error('Scan timeout exceeded before news step');
-          }
-          
-          // Step: News
-          console.log(`[Cron] ${actualScanId} - Fetching news`);
-          const newsResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              step: 'news',
-              scanId: actualScanId,
-              industry: scan.industry,
-              userId: scan.user_id
-            })
-          });
-          
-          const newsResult = await newsResponse.json();
-          if (!newsResult.success) {
-            throw new Error(`News fetch failed: ${newsResult.error || 'Unknown error'}`);
-          }
-          console.log(`[Cron] ${actualScanId} - News fetched`);
-          
-          // Check timeout before final analyze step
-          if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
-            throw new Error('Scan timeout exceeded before analyze step');
-          }
-          
-          // Step: Analyze (insights + alerts)
-          console.log(`[Cron] ${actualScanId} - Analyzing`);
-          const analyzeResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              step: 'analyze',
-              scanId: actualScanId,
-              industry: scan.industry,
-              userId: scan.user_id,
-              companies: competitorsResult.companies || [],
-              news: newsResult.news || [],
-              isRefresh: false
-            })
-          });
-          
-          const analyzeResult = await analyzeResponse.json();
-          if (!analyzeResult.success) {
-            throw new Error(`Analysis failed: ${analyzeResult.error || 'Unknown error'}`);
-          }
-          console.log(`[Cron] ${actualScanId} - Analysis complete`);
+        // Check timeout
+        if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+          throw new Error('Timeout before news step');
         }
+        
+        // Step 2: News
+        console.log(`[Cron] ${actualScanId} - Fetching news`);
+        const newsResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            step: 'news',
+            scanId: actualScanId,
+            industry: scan.industry,
+            userId: scan.user_id
+          })
+        });
+        
+        const newsResult = await newsResponse.json();
+        if (!newsResult.success) {
+          throw new Error(`News fetch failed: ${newsResult.error || 'Unknown error'}`);
+        }
+        console.log(`[Cron] ${actualScanId} - News fetched`);
+        
+        // Check timeout
+        if (Date.now() - scanStartTime > SCAN_TIMEOUT_MS) {
+          throw new Error('Timeout before analyze step');
+        }
+        
+        // Step 3: Analyze
+        console.log(`[Cron] ${actualScanId} - Analyzing`);
+        const analyzeResponse = await fetch(`${process.env.URL}/.netlify/functions/scan-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            step: 'analyze',
+            scanId: actualScanId,
+            industry: scan.industry,
+            userId: scan.user_id,
+            news: newsResult.news || [],
+            isRefresh: true
+          })
+        });
+        
+        const analyzeResult = await analyzeResponse.json();
+        if (!analyzeResult.success) {
+          throw new Error(`Analysis failed: ${analyzeResult.error || 'Unknown error'}`);
+        }
+        console.log(`[Cron] ${actualScanId} - Analysis complete`);
         
         // Mark scan as completed
         await supabase
@@ -291,105 +234,84 @@ export const handler: Handler = async (event) => {
           .update({ status: 'completed', updated_at: now.toISOString() })
           .eq('id', actualScanId);
         
-        // Count new items added during this refresh (by is_new flag)
-        const { data: newsCount } = await supabase
+        // Count new items
+        const { count: newsCount } = await supabase
           .from('news_feed')
-          .select('id', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true })
           .eq('scan_id', actualScanId)
           .eq('is_new', true);
         
-        const { data: insightsCount } = await supabase
+        const { count: insightsCount } = await supabase
           .from('insights')
-          .select('id', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true })
           .eq('scan_id', actualScanId)
           .eq('is_new', true);
         
-        const { data: alertsCount } = await supabase
+        const { count: alertsCount } = await supabase
           .from('alerts')
-          .select('id', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true })
           .eq('scan_id', actualScanId)
           .eq('is_new', true);
         
-        const counts = {
-          new_news_count: newsCount || 0,
-          new_insights_count: insightsCount || 0,
-          new_alerts_count: alertsCount || 0
-        };
+        console.log(`[Cron] ${actualScanId} - New items: ${insightsCount || 0} insights, ${alertsCount || 0} alerts, ${newsCount || 0} news`);
         
-        console.log(`[Cron] ${actualScanId} - New items: ${counts.new_insights_count} insights, ${counts.new_alerts_count} alerts, ${counts.new_news_count} news`);
-        
-        // Update refresh log with counts
+        // Update refresh log
         const completedAt = new Date().toISOString();
         if (refreshLogId) {
-          console.log(`[Cron] ${actualScanId} - Updating refresh_log ${refreshLogId} to completed`);
-          const { error: updateError } = await supabase
+          await supabase
             .from('refresh_logs')
-            .update({ 
+            .update({
               status: 'completed',
-              new_alerts_count: counts.new_alerts_count,
-              new_insights_count: counts.new_insights_count,
-              new_news_count: counts.new_news_count,
+              new_alerts_count: alertsCount || 0,
+              new_insights_count: insightsCount || 0,
+              new_news_count: newsCount || 0,
               completed_at: completedAt
             })
             .eq('id', refreshLogId);
-          
-          if (updateError) {
-            console.error(`[Cron] Failed to update refresh_log ${refreshLogId}:`, updateError);
-          }
         } else if (actualScanId) {
-          console.log(`[Cron] ${actualScanId} - No refreshLogId, searching by scan_id`);
-          const { error: updateError } = await supabase
+          await supabase
             .from('refresh_logs')
-            .update({ 
+            .update({
               status: 'completed',
-              new_alerts_count: counts.new_alerts_count,
-              new_insights_count: counts.new_insights_count,
-              new_news_count: counts.new_news_count,
+              new_alerts_count: alertsCount || 0,
+              new_insights_count: insightsCount || 0,
+              new_news_count: newsCount || 0,
               completed_at: completedAt
             })
             .eq('scan_id', actualScanId)
             .eq('status', 'running')
             .order('started_at', { ascending: false })
             .limit(1);
-          
-          if (updateError) {
-            console.error(`[Cron] Failed to update refresh_log by scan_id:`, updateError);
-          }
         }
         
-        console.log(`[Cron] ${actualScanId} - Full refresh completed successfully`);
+        console.log(`[Cron] ${actualScanId} - Refresh completed successfully`);
         
         results.push({
           scanId: actualScanId,
           status: 'completed',
-          message: 'All 4 steps completed successfully'
+          reason,
+          message: 'Refresh completed'
         });
         
       } catch (error: any) {
-        console.error(`[Cron] Error running scan ${scanId}:`, error);
+        console.error(`[Cron] Error refreshing scan ${scan.id}:`, error);
         
-        // Mark as failed in refresh_logs
+        // Mark as failed
         const failedAt = new Date().toISOString();
         if (refreshLogId) {
-          console.log(`[Cron] ${scanId} - Marking refresh_log ${refreshLogId} as failed`);
-          const { error: updateError } = await supabase
+          await supabase
             .from('refresh_logs')
-            .update({ 
-              status: 'failed', 
+            .update({
+              status: 'failed',
               error_message: error.message,
               completed_at: failedAt
             })
             .eq('id', refreshLogId);
-          
-          if (updateError) {
-            console.error(`[Cron] Failed to update failed status for refresh_log ${refreshLogId}:`, updateError);
-          }
         } else if (actualScanId) {
-          console.log(`[Cron] ${actualScanId} - No refreshLogId, marking latest running log as failed`);
-          const { error: updateError } = await supabase
+          await supabase
             .from('refresh_logs')
-            .update({ 
-              status: 'failed', 
+            .update({
+              status: 'failed',
               error_message: error.message,
               completed_at: failedAt
             })
@@ -397,40 +319,23 @@ export const handler: Handler = async (event) => {
             .eq('status', 'running')
             .order('started_at', { ascending: false })
             .limit(1);
-          
-          if (updateError) {
-            console.error(`[Cron] Failed to update failed status by scan_id:`, updateError);
-          }
-        } else {
-          console.warn(`[Cron] ${scanId} - No actualScanId or refreshLogId, cannot mark refresh_log as failed`);
         }
         
         results.push({
-          scanId: actualScanId || scanId,
+          scanId: actualScanId || scan.id,
           status: 'error',
+          reason,
           message: error.message
         });
       }
-    }
-    
-    // Update schedules with last/next run times
-    for (const update of schedulesToUpdate) {
-      await supabase
-        .from('scan_schedules')
-        .update({
-          last_run_at: update.last_run_at,
-          next_run_at: update.next_run_at,
-          updated_at: now.toISOString()
-        })
-        .eq('id', update.id);
     }
     
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        schedulesChecked: schedules?.length || 0,
-        scansTriggered: scansToRun.length,
+        scansChecked: scans?.length || 0,
+        scansRefreshed: scansToRefresh.length,
         results
       })
     };
@@ -446,63 +351,3 @@ export const handler: Handler = async (event) => {
     };
   }
 };
-
-function checkIfScheduleShouldRun(schedule: any, now: Date): boolean {
-  // If no last_run_at, it's never been run
-  if (!schedule.last_run_at) {
-    return true;
-  }
-  
-  const lastRun = new Date(schedule.last_run_at);
-  const hoursDiff = (now.getTime() - lastRun.getTime()) / (1000 * 60 * 60);
-  
-  // Check based on frequency
-  switch (schedule.frequency) {
-    case 'hourly':
-      // Run every hour (at least 59 minutes since last run)
-      return hoursDiff >= 0.98;
-    
-    case 'daily':
-      // Run if it's been at least 23 hours and it's the right hour
-      return hoursDiff >= 23 && now.getUTCHours() === schedule.hour;
-    
-    case 'weekly':
-      // Run if it's been at least 6 days and it's the right day and hour
-      return hoursDiff >= 24 * 6 && 
-             now.getUTCDay() === schedule.day_of_week && 
-             now.getUTCHours() === schedule.hour;
-    
-    default:
-      return false;
-  }
-}
-
-function calculateNextRun(schedule: any, from: Date): Date {
-  const next = new Date(from);
-  
-  // Set the hour and minute
-  next.setUTCHours(schedule.hour);
-  next.setUTCMinutes(schedule.minute || 0);
-  next.setUTCSeconds(0);
-  next.setUTCMilliseconds(0);
-  
-  switch (schedule.frequency) {
-    case 'hourly':
-      // Next hour
-      next.setUTCHours(from.getUTCHours() + 1);
-      break;
-    
-    case 'daily':
-      // Next day at the scheduled time
-      next.setUTCDate(next.getUTCDate() + 1);
-      break;
-    
-    case 'weekly':
-      // Next occurrence of the scheduled day
-      const daysUntilNext = (schedule.day_of_week - from.getUTCDay() + 7) % 7 || 7;
-      next.setUTCDate(from.getUTCDate() + daysUntilNext);
-      break;
-  }
-  
-  return next;
-}

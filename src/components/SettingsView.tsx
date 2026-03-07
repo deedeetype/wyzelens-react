@@ -5,7 +5,6 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useUser } from '@clerk/react'
 import { useSubscription } from '@/hooks/useSubscription'
 import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw, Lock, Crown, Settings } from 'lucide-react'
-import AutomatedScansSettings from './AutomatedScansSettings'
 import UpgradeModal from './UpgradeModal'
 import { INDUSTRIES } from '@/constants/industries'
 
@@ -18,7 +17,7 @@ export default function SettingsView() {
   const { plan, limits } = useSubscription()
   const [saved, setSaved] = useState(false)
   const [watchlistInput, setWatchlistInput] = useState('')
-  const [activeSection, setActiveSection] = useState<'profile' | 'scan' | 'notifications' | 'automated'>('profile')
+  // Removed activeSection state - single page now
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   // Load onboarding data into settings on mount
@@ -109,33 +108,28 @@ export default function SettingsView() {
         )}
       </div>
 
-      {/* Section Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-slate-800">
-        {[
-          { id: 'profile', label: 'Profile', icon: User },
-          { id: 'automated', label: 'Automated Scans', icon: RefreshCw }
-        ].map((section) => {
-          const Icon = section.icon
-          return (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id as any)}
-              className={`flex items-center gap-2 px-4 py-3 font-medium transition border-b-2 ${
-                activeSection === section.id
-                  ? 'text-indigo-400 border-indigo-400'
-                  : 'text-slate-500 border-transparent hover:text-slate-300'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {section.label}
-            </button>
-          )
-        })}
+      {/* Removed Section Tabs - Settings is now single page */}
+
+      {/* Auto-refresh notice */}
+      <div className={`${cardClass} mb-6 bg-indigo-600/10 border-indigo-500/30`}>
+        <div className="flex items-start gap-3">
+          <RefreshCw className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-base font-bold text-indigo-300 mb-1">Automated Refresh Schedule</h3>
+            <p className="text-sm text-slate-300">
+              Your scans auto-refresh <span className="font-semibold text-white">
+              {plan === 'free' ? 'weekly (Sunday midnight UTC)' : 
+               plan === 'starter' ? 'daily (midnight UTC)' : 
+               'hourly'}
+              </span> based on your <span className="capitalize font-semibold text-white">{plan}</span> plan.
+            </p>
+            <p className="text-xs text-slate-400 mt-2">
+              All refresh activity is tracked in the Activity tab.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Profile Section */}
-      {activeSection === 'profile' && (
-        <>
       {/* Subscription Management - Only show for paid plans */}
       {plan !== 'free' && (
         <div className={`${cardClass} mb-6`}>
@@ -481,13 +475,6 @@ export default function SettingsView() {
           </div>
         </div>
       </div>
-        </>
-      )}
-
-      {/* Automated Scans Section */}
-      {activeSection === 'automated' && (
-        <AutomatedScansSettings />
-      )}
 
       {/* Upgrade Modal */}
       <UpgradeModal 
