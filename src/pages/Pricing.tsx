@@ -114,33 +114,50 @@ export default function Pricing() {
   ]
 
   const handleSelectPlan = async (planId: string, href: string) => {
+    // Enterprise: Open email
     if (planId === 'enterprise') {
       window.location.href = href
       return
     }
     
+    // Not logged in: Go to sign up
     if (!user) {
       navigate(href)
       return
     }
     
+    // Free plan: Go to dashboard
     if (planId === 'free') {
       navigate('/dashboard')
       return
     }
     
-    // TODO: Stripe checkout integration
+    // Paid plans: Stripe checkout
     setLoading(planId)
     try {
-      // Call Stripe checkout endpoint
-      console.log('TODO: Integrate Stripe checkout for', planId)
-      setTimeout(() => {
-        setLoading('')
-        alert('Stripe integration coming soon!')
-      }, 1000)
+      const response = await fetch('/.netlify/functions/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user.primaryEmailAddress?.emailAddress || '',
+        },
+        body: JSON.stringify({
+          planId: planId,
+          userId: user.id,
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('No checkout URL received')
+      }
     } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Failed to start checkout. Please try again.')
       setLoading('')
-      console.error('Error:', error)
     }
   }
 
