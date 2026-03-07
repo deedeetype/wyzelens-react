@@ -43,6 +43,8 @@ export const handler: Handler = async (event) => {
     }
 
     // Fetch user's subscription from Supabase to get Stripe customer ID
+    console.log('[PORTAL] Fetching subscription for userId:', userId);
+    
     const response = await fetch(
       `${SUPABASE_URL}/rest/v1/user_subscription?user_id=eq.${userId}&select=stripe_customer_id`,
       {
@@ -53,17 +55,53 @@ export const handler: Handler = async (event) => {
       }
     );
 
-    const subscriptions = await response.json();
+    const data = await response.json();
     
-    if (!subscriptions || subscriptions.length === 0 || !subscriptions[0].stripe_customer_id) {
+    console.log('[PORTAL] Supabase response status:', response.status);
+    console.log('[PORTAL] Supabase response data:', JSON.stringify(data, null, 2));
+    
+    // Check for Supabase error response
+    if (data.error || data.message) {
+      console.error('[PORTAL] Supabase error:', data);
+      return {
+        statusCode: 500,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ 
+          error: 'Database error', 
+          details: data.error || data.message 
+        }),
+      };
+    }
+    
+    // Check if data is an array with at least one result
+    if (!Array.isArray(data) || data.length === 0) {
+      console.error('[PORTAL] No subscription found. Response:', data);
       return {
         statusCode: 404,
         headers: CORS_HEADERS,
-        body: JSON.stringify({ error: 'No active subscription found' }),
+        body: JSON.stringify({ 
+          error: 'No active subscription found',
+          debug: { userId, responseType: typeof data, dataLength: Array.isArray(data) ? data.length : 'not-array' }
+        }),
+      };
+    }
+    
+    const subscription = data[0];
+    
+    if (!subscription?.stripe_customer_id) {
+      console.error('[PORTAL] Missing stripe_customer_id. Subscription:', subscription);
+      return {
+        statusCode: 404,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ 
+          error: 'No Stripe customer ID found',
+          debug: { subscription }
+        }),
       };
     }
 
-    const customerId = subscriptions[0].stripe_customer_id;
+    const customerId = subscription.stripe_customer_id;
+    console.log('[PORTAL] Creating portal session for customer:', customerId);
 
     // Create Stripe billing portal session
     const session = await stripe.billingPortal.sessions.create({
