@@ -10,9 +10,9 @@ export const handler: Handler = async (event) => {
     };
   }
 
-  // Get environment variables
+  // Get environment variables (same pattern as scan-step.mts)
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error('[Delete] Missing Supabase credentials');
