@@ -121,7 +121,10 @@ export const handler: Handler = async (event) => {
     case 'customer.subscription.updated': {
       const subscription = stripeEvent.data.object as Stripe.Subscription;
       
-      // Handle subscription updates (e.g., plan changes)
+      console.log('Processing subscription.updated:', subscription.id);
+      console.log('Status:', subscription.status, 'Cancel at period end:', subscription.cancel_at_period_end);
+      
+      // Handle subscription updates (e.g., plan changes, cancellations)
       const { data: subs } = await supabase
         .from('user_subscriptions')
         .select('user_id')
@@ -129,15 +132,30 @@ export const handler: Handler = async (event) => {
         .single();
 
       if (subs) {
+        const updateData: any = {
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end || false,
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Track billing period
+        if (subscription.current_period_start) {
+          updateData.current_period_start = new Date(subscription.current_period_start * 1000).toISOString();
+        }
+        if (subscription.current_period_end) {
+          updateData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+        
         await supabase
           .from('user_subscriptions')
-          .update({
-            status: subscription.status,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('user_id', subs.user_id);
 
-        console.log('Subscription status updated to:', subscription.status);
+        console.log('Subscription updated:', {
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null
+        });
       }
       break;
     }
