@@ -214,37 +214,31 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
       // ═══════════════════════════════════════════════════════════════
       console.log(`[stepInit] REFRESH MODE - Reusing scan ${existingScan.id} (refresh count: ${existingScan.refresh_count || 0})`)
       
-      // ✅ CHECK REFRESH TIME LIMITS (only for manual refreshes, not scheduled)
+      // ✅ CHECK REFRESH LIMITS (only for manual refreshes, not scheduled)
       if (!isScheduled) {
-        console.log('[stepInit] Checking refresh TIME limits...')
+        console.log('[stepInit] Checking manual refresh daily limits...')
       
-      // Get user subscription
-      const subRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/user_subscriptions?user_id=eq.${actualUserId}&order=created_at.desc&limit=1`,
-        {
-          headers: {
-            'apikey': SUPABASE_KEY!,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
+        // Get user subscription
+        const subRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/user_subscriptions?user_id=eq.${actualUserId}&order=created_at.desc&limit=1`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
           }
-        }
-      )
-      
-      const subs = await subRes.json()
-      const plan = subs?.[0]?.plan || 'free'
-      console.log(`[stepInit] User plan: ${plan}`)
-      
-      // Check last refresh time
-      const lastRefresh = existingScan.last_refreshed_at ? new Date(existingScan.last_refreshed_at) : null
-      const now = new Date()
-      
-      if (lastRefresh) {
-        const hoursSinceRefresh = (now.getTime() - lastRefresh.getTime()) / (1000 * 60 * 60)
+        )
         
-        // Refresh limits by plan (manual refreshes only)
-        // FREE: 1/day, STARTER: 3/day, PRO+: unlimited
+        const subs = await subRes.json()
+        const plan = subs?.[0]?.plan || 'free'
+        console.log(`[stepInit] User plan: ${plan}`)
+        
+        const now = new Date()
+        
+        // Manual refresh daily limits: FREE=1/day, STARTER=3/day, PRO+=unlimited
         const startOfDayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
         
-        // Count manual refreshes today (UTC)
+        // Count manual refreshes today (UTC) - check BEFORE creating new log
         const countRes = await fetch(
           `${SUPABASE_URL}/rest/v1/refresh_logs?user_id=eq.${actualUserId}&triggered_by=eq.manual&created_at=gte.${startOfDayUTC.toISOString()}&select=id`,
           {
@@ -274,13 +268,10 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
         
         console.log(`[stepInit] Manual refresh allowed: ${manualRefreshCount}/${dailyLimit} used today`)
         
-        // ✅ Daily count limit is the ONLY manual refresh limit
-        // Auto-refresh frequency (weekly/daily/hourly) is handled by cron, not here
-      }
       } else {
-        console.log('[stepInit] Scheduled refresh - skipping manual refresh time limits')
+        console.log('[stepInit] Scheduled refresh - skipping manual refresh limits')
       }
-      // ✅ END REFRESH TIME LIMITS CHECK
+      // ✅ END REFRESH LIMITS CHECK
       
       // ═══════════════════════════════════════════════════════════════
       // 🧹 RESET is_new FLAGS (prevent old items from showing NEW badge)
