@@ -106,7 +106,7 @@ export const handler: Handler = async (event) => {
     // Create Stripe billing portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.URL || 'https://wyzelens.com'}/dashboard`,
+      return_url: `${process.env.VITE_APP_URL || 'https://wyzelens.com'}/dashboard`,
     });
 
     return {
