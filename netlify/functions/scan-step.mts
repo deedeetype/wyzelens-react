@@ -19,6 +19,34 @@ const CORS = {
   'Content-Type': 'application/json'
 }
 
+/**
+ * Validate and fix malformed timestamps from external APIs
+ * Returns valid ISO timestamp or null
+ */
+function validateTimestamp(ts: string | null | undefined): string | null {
+  if (!ts) return null
+  
+  try {
+    // Check if date is valid
+    const date = new Date(ts)
+    if (isNaN(date.getTime())) {
+      console.warn(`[VALIDATION] Invalid timestamp: "${ts}", using current time`)
+      return new Date().toISOString()
+    }
+    
+    // Additional check: ensure date string has proper format (YYYY-MM-DD at minimum)
+    if (!/^\d{4}-\d{2}-\d{2}/.test(ts)) {
+      console.warn(`[VALIDATION] Malformed timestamp: "${ts}", using current time`)
+      return new Date().toISOString()
+    }
+    
+    return date.toISOString() // Normalize to ISO format
+  } catch (e) {
+    console.warn(`[VALIDATION] Timestamp parse error: "${ts}", using current time`)
+    return new Date().toISOString()
+  }
+}
+
 function parseJsonArray(text: string) {
   try {
     // Remove markdown code fences if present
@@ -880,7 +908,7 @@ async function stepFinalize(
           relevance_score: n.daysAgo === 0 ? 0.9 : (n.daysAgo <= 3 ? 0.7 : 0.5),
           sentiment: 'neutral',
           tags: n.tags || [],
-          published_at: n.published_at, // Use ACTUAL publication date from article
+          published_at: validateTimestamp(n.published_at) || new Date().toISOString(), // Validate before insert
           is_new: true,
           added_at: new Date().toISOString()
         }))
