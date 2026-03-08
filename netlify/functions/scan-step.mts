@@ -1411,7 +1411,9 @@ JSON object with ticker as key: {"AAPL": {"price": 178.50, "currency": "USD", "c
       user_id: actualUserId, scan_id: scanId,
       title: n.title, summary: n.summary || n.description,
       source: n.source || 'Perplexity', source_url: n.url || null,
-      relevance_score: 0.5, sentiment: 'neutral', tags: n.tags || []
+      relevance_score: 0.5, sentiment: 'neutral', tags: n.tags || [],
+      is_new: true,
+      added_at: new Date().toISOString()
     }))
   ) : []
 
