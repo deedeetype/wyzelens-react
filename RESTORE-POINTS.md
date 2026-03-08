@@ -1,5 +1,46 @@
 # WyzeLens Restore Points
 
+## v1.5.3-limits-working (2026-03-07 23:30 EST) ⭐ CURRENT STABLE
+
+**Commit:** `f5a0b3b`  
+**Status:** ✅ STABLE - **DO NOT TOUCH REFRESH/LIMIT LOGIC**
+
+### ⚠️ PROTECTED CODE - DO NOT MODIFY:
+- `netlify/functions/scan-step.mts` lines 217-275 (refresh limit validation)
+- `netlify/functions/run-scheduled-scans.mts` (auto-refresh cron logic)
+- `src/pages/Dashboard.tsx` refresh button handler (lines ~625-710)
+- `refresh_logs` table queries (always use `started_at`, not `created_at`)
+
+### What Works Perfectly:
+- ✅ **Manual refresh limits ENFORCED:** Free=1/day, Starter=3/day, Pro+=unlimited
+- ✅ **Limit validation counts correctly** (fixed: uses `started_at` column)
+- ✅ **Upgrade modal appears** when limit reached
+- ✅ **Auto refresh** via cron (weekly/daily/hourly by plan)
+- ✅ **NEW badges** on fresh items only
+- ✅ **Activity tab** shows all logs with accurate counts
+- ✅ **Delete profile** works (backend function)
+- ✅ **No duplicate scans** on refresh
+- ✅ **No duplicate alerts/insights** (title filtering)
+
+### Critical Fix (v1.5.3):
+- Query `refresh_logs` by `started_at` (not `created_at` which doesn't exist)
+- This fixed the "0/1 used today" bug that let users bypass limits
+
+### Architecture:
+1. **Refresh flow:** `init` (validate limits) → `news` → `analyze` (create log)
+2. **Limit check:** Query `refresh_logs` with `started_at >= midnight UTC`
+3. **3 distinct limits:**
+   - Active profiles: Free=1, Starter=3, Pro=5, Business=10
+   - Manual refresh daily: Free=1/day, Starter=3/day, Pro+=unlimited
+   - Auto refresh freq: Free=weekly, Starter=daily, Pro+=hourly
+
+### Restore Command:
+```bash
+git checkout v1.5.3-limits-working
+```
+
+---
+
 ## v1.5.2-refresh-stable (2026-03-07 16:40 EST)
 
 **Commit:** `69532b2`  
