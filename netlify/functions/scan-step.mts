@@ -241,7 +241,7 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
         
         // Count manual refreshes today (UTC) - check BEFORE creating new log
         const countRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/refresh_logs?user_id=eq.${actualUserId}&triggered_by=eq.manual&created_at=gte.${startOfDayUTC.toISOString()}&select=id`,
+          `${SUPABASE_URL}/rest/v1/refresh_logs?user_id=eq.${actualUserId}&triggered_by=eq.manual&started_at=gte.${startOfDayUTC.toISOString()}&select=id`,
           {
             headers: {
               'apikey': SUPABASE_KEY!,
