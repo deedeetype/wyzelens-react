@@ -627,74 +627,57 @@ export default function Dashboard() {
                     if (!selectedScan) return
                     setIsScanning(true)
                     setScanProgress('🔄 Starting refresh...')
-                    setScanProgressPercent(5)
+                    setScanProgressPercent(10)
                     
                     try {
                       const scanId = selectedScan.id
                       
-                      // Step 1: Init (validates limits, resets is_new flags, creates refresh_log)
-                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('🔄 Validating refresh limits...')
-                      setScanProgressPercent(10)
+                      // ✅ NEW: Call dedicated refresh-scan endpoint
+                      console.log(`[REFRESH] Calling refresh-scan for scan ${scanId}`)
                       
-                      await callStep('init', { 
-                        industry: selectedScan.industry, 
-                        companyUrl: selectedScan.company_url || undefined,
-                        companyName: selectedScan.company_name || undefined,
-                        userId: user?.id,
-                        isRefresh: true,      // ← EXPLICIT: This is a refresh
-                        isScheduled: false    // ← EXPLICIT: Manual refresh (not cron)
+                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
+                      setScanProgress('🔄 Refreshing intelligence...')
+                      setScanProgressPercent(50)
+                      
+                      const response = await fetch('/.netlify/functions/refresh-scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          scanId,
+                          userId: user?.id,
+                          triggeredBy: 'manual'
+                        })
                       })
                       
-                      console.log(`[REFRESH] Init complete for scan ${scanId}`)
+                      const result = await response.json()
                       
-                      // Step 2: Fetch latest news
-                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('📰 Fetching latest news...')
-                      setScanProgressPercent(30)
+                      if (!result.success) {
+                        throw new Error(result.error || 'Refresh failed')
+                      }
                       
-                      const newsResult = await callStep('news', { 
-                        scanId,
-                        industry: selectedScan.industry,
-                        userId: user?.id
-                      })
+                      const counts = result.counts || { alerts: 0, insights: 0, news: 0 }
                       
-                      console.log(`[REFRESH] Fetched ${newsResult.count || 0} news articles`)
-                      
-                      // Step 3: Analyze (generates insights + alerts + writes to DB + creates refresh_log)
-                      if (scanCancelledRef.current) throw new Error('Scan cancelled')
-                      setScanProgress('💡 Analyzing & saving...')
-                      setScanProgressPercent(60)
-                      
-                      const analyzeResult = await callStep('analyze', {
-                        scanId,
-                        industry: selectedScan.industry,
-                        news: newsResult.news || [],
-                        userId: user?.id,
-                        isRefresh: true
-                      })
-                      
-                      console.log(`[REFRESH] Analyze complete: ${analyzeResult.alerts || 0} alerts, ${analyzeResult.insights || 0} insights, ${analyzeResult.news || 0} news`)
+                      console.log(`[REFRESH] Complete: ${counts.alerts} alerts, ${counts.insights} insights, ${counts.news} news`)
                       
                       setScanProgressPercent(100)
-                      setScanProgress(`✅ Refresh complete! ${analyzeResult.alerts || 0} alerts, ${analyzeResult.insights || 0} insights, ${analyzeResult.news || 0} news`)
+                      setScanProgress(`✅ Refresh complete! ${counts.alerts} alerts, ${counts.insights} insights, ${counts.news} news`)
                       
                       // Refetch data
                       await refetchScans()
                       await refetchInsights()
                       
-                      // Wait for all updates to complete before reload
+                      // Wait before reload
                       setTimeout(() => {
                         setIsScanning(false)
                         setScanProgress('')
                         setScanProgressPercent(0)
-                        window.location.reload() // Force reload to update all contexts
+                        window.location.reload()
                       }, 2500)
                       
                     } catch (error: any) {
                       console.error('[REFRESH] Error:', error)
                       
-                      // Check if it's a plan/refresh limit error
+                      // Check if it's a limit error
                       if (error.message?.includes('limit reached') || error.message?.includes('Plan limit')) {
                         setScanProgress('❌ ' + error.message)
                         setScanProgressPercent(0)
