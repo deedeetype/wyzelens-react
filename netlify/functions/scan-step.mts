@@ -374,6 +374,55 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
   
   console.log(`[stepInit] Limit check passed: ${activeScans}/${limit}`)
   
+  // ═══════════════════════════════════════════════════════════════
+  // 🔒 CHECK INDUSTRY COOLDOWN (prevent delete/recreate bypass)
+  // ═══════════════════════════════════════════════════════════════
+  console.log('[stepInit] Checking industry cooldown...')
+  
+  // Cooldown rules by plan (hours)
+  const cooldownHours: Record<string, number> = {
+    free: 24,        // Free: 24h cooldown between same industry scans
+    starter: 12,     // Starter: 12h cooldown
+    pro: 0,          // Pro: no cooldown (can recreate instantly)
+    business: 0,
+    enterprise: 0
+  }
+  
+  const requiredCooldown = cooldownHours[plan] || cooldownHours.free
+  
+  if (requiredCooldown > 0) {
+    // Check if user created this industry recently
+    const cooldownRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/industry_cooldowns?user_id=eq.${actualUserId}&industry=eq.${encodeURIComponent(industry)}&select=last_scan_created_at`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY!,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      }
+    )
+    const cooldowns = await cooldownRes.json()
+    
+    if (cooldowns && cooldowns.length > 0) {
+      const lastCreated = new Date(cooldowns[0].last_scan_created_at)
+      const hoursSince = (Date.now() - lastCreated.getTime()) / (1000 * 60 * 60)
+      
+      if (hoursSince < requiredCooldown) {
+        const hoursRemaining = Math.ceil(requiredCooldown - hoursSince)
+        console.error(`[stepInit] Industry cooldown active: ${hoursSince.toFixed(1)}h since last ${industry} scan, need ${requiredCooldown}h`)
+        throw new Error(`You recently deleted and recreated the "${industry}" profile. Your ${plan} plan requires a ${requiredCooldown}-hour cooldown between creating new scans for the same industry. Please wait ${hoursRemaining} hour${hoursRemaining > 1 ? 's' : ''} or upgrade for instant access.`)
+      }
+      
+      console.log(`[stepInit] Cooldown check passed (${hoursSince.toFixed(1)}h since last scan)`)
+    } else {
+      console.log('[stepInit] No previous cooldown found (first scan for this industry)')
+    }
+  } else {
+    console.log('[stepInit] No cooldown required (Pro+ plan)')
+  }
+  
+  // ✅ COOLDOWN CHECK PASSED
+  
   // Create new profile
   const [scan] = await supabasePost('scans', {
     user_id: actualUserId,
@@ -383,6 +432,29 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
     company_name: companyName || null,
     refresh_count: 0
   })
+  
+  // Update cooldown timestamp (upsert)
+  console.log('[stepInit] Updating industry cooldown timestamp...')
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/industry_cooldowns`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'  // Upsert on conflict
+      },
+      body: JSON.stringify({
+        user_id: actualUserId,
+        industry,
+        last_scan_created_at: new Date().toISOString()
+      })
+    })
+    console.log('[stepInit] Cooldown timestamp updated')
+  } catch (e) {
+    console.warn('[stepInit] Failed to update cooldown (non-critical):', e)
+    // Non-critical error, continue
+  }
   
   return { scanId: scan.id, isRefresh: false, userId: actualUserId }
 }
