@@ -1492,6 +1492,44 @@ Use the actual known competitor names from this list where possible: ${analyzed.
 
   // Mark scan as completed - increment counts for refresh, set for new scan
   if (isRefresh) {
+    // ✅ RESET is_new FLAGS FOR EXISTING ITEMS (before counting new ones)
+    console.log('[ANALYZE-REFRESH] Resetting is_new flags for existing items in this scan...')
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/alerts?scan_id=eq.${scanId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_new: false })
+    })
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/insights?scan_id=eq.${scanId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_new: false })
+    })
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/news_feed?scan_id=eq.${scanId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ is_new: false })
+    })
+    
+    console.log('[ANALYZE-REFRESH] All existing items marked as is_new=false')
+    
     // Fetch current counts
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/scans?id=eq.${scanId}&select=alerts_count,insights_count,news_count`,
@@ -1514,21 +1552,9 @@ Use the actual known competitor names from this list where possible: ${analyzed.
       news_count: current.news_count + insertedNews.length
     })
     
-    // ✅ CREATE REFRESH LOG (for manual refreshes)
-    console.log('[ANALYZE] Creating refresh_log entry...')
-    await supabasePost('refresh_logs', {
-      scan_id: scanId,
-      user_id: actualUserId,
-      industry: industry,
-      triggered_by: 'manual',
-      started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-      status: 'completed',
-      new_alerts_count: insertedAlerts.length,
-      new_insights_count: insertedInsights.length,
-      new_news_count: insertedNews.length
-    })
-    console.log('[ANALYZE] Refresh log created successfully')
+    // ⚠️ DO NOT CREATE refresh_log here - it's created by run-scheduled-scans.mts (for scheduled)
+    // Manual refreshes (via frontend) don't exist anymore - all refreshes come from cron
+    console.log('[ANALYZE-REFRESH] Skipping refresh_log creation (handled by caller: run-scheduled-scans)')
   } else {
     // Set counts for new scan
     await supabasePatch('scans', `id=eq.${scanId}`, {
