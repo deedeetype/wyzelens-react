@@ -83,7 +83,27 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    // Delete scan (cascade will delete related data: competitors, alerts, insights, news, refresh_logs)
+    // Delete refresh_logs first (not CASCADE configured on foreign key)
+    console.log(`[Delete] Deleting refresh_logs for scan ${scanId}`)
+    const deleteLogsRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/refresh_logs?scan_id=eq.${scanId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_KEY!,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      }
+    )
+    
+    if (!deleteLogsRes.ok) {
+      console.warn('[Delete] refresh_logs delete failed (non-critical):', deleteLogsRes.status)
+    } else {
+      console.log('[Delete] refresh_logs deleted')
+    }
+    
+    // Delete scan (cascade will delete related data: competitors, alerts, insights, news)
+    console.log(`[Delete] Deleting scan ${scanId}`)
     const deleteRes = await fetch(
       `${SUPABASE_URL}/rest/v1/scans?id=eq.${scanId}&user_id=eq.${userId}`,
       {
