@@ -1552,9 +1552,46 @@ Use the actual known competitor names from this list where possible: ${analyzed.
       news_count: current.news_count + insertedNews.length
     })
     
-    // ⚠️ DO NOT CREATE refresh_log here - it's created by run-scheduled-scans.mts (for scheduled)
-    // Manual refreshes (via frontend) don't exist anymore - all refreshes come from cron
-    console.log('[ANALYZE-REFRESH] Skipping refresh_log creation (handled by caller: run-scheduled-scans)')
+    // ✅ CREATE OR UPDATE REFRESH LOG
+    // Check if run-scheduled-scans already created a 'running' log
+    const existingLogRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/refresh_logs?scan_id=eq.${scanId}&status=eq.running&order=started_at.desc&limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY!,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      }
+    )
+    const existingLogs = await existingLogRes.json()
+    
+    if (existingLogs && existingLogs.length > 0) {
+      // Update existing log (from cron)
+      console.log('[ANALYZE] Updating existing refresh_log (cron-created)')
+      await supabasePatch('refresh_logs', `id=eq.${existingLogs[0].id}`, {
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        new_alerts_count: insertedAlerts.length,
+        new_insights_count: insertedInsights.length,
+        new_news_count: insertedNews.length
+      })
+    } else {
+      // Create new log (manual refresh)
+      console.log('[ANALYZE] Creating new refresh_log entry (manual refresh)')
+      await supabasePost('refresh_logs', {
+        scan_id: scanId,
+        user_id: actualUserId,
+        industry: industry,
+        triggered_by: 'manual',
+        started_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        status: 'completed',
+        new_alerts_count: insertedAlerts.length,
+        new_insights_count: insertedInsights.length,
+        new_news_count: insertedNews.length
+      })
+    }
+    console.log('[ANALYZE] Refresh log complete')
   } else {
     // Set counts for new scan
     await supabasePatch('scans', `id=eq.${scanId}`, {
