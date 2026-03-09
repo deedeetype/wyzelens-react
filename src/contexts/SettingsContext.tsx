@@ -14,7 +14,7 @@ export interface UserProfile {
 
 export interface ScanPreferences {
   maxCompetitors: number
-  scanFrequency: 'manual' | 'daily' | 'weekly'
+  scanFrequency: 'manual' | 'daily' | 'weekly' | 'hourly'
   targetRegions: string[]
   watchlist: string[] // company names/URLs to always include
 }

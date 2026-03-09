@@ -335,18 +335,19 @@ export default function SettingsView() {
         <div className="space-y-6">
           {/* Max Competitors */}
           <div>
-            <label className={labelClass}>{t('settings.max_competitors')}</label>
+            <label className={labelClass}>Max Competitors per Scan</label>
             <div className="flex flex-wrap gap-2">
               {[
-                { value: 5, requiredPlan: 'free' },
-                { value: 10, requiredPlan: 'free' },
-                { value: 15, requiredPlan: 'pro' },
-                { value: 20, requiredPlan: 'pro' },
-                { value: 30, requiredPlan: 'pro', label: '30 (Pro)' },
-                { value: 100, requiredPlan: 'business', label: '100 (Business)' }
-              ].filter(opt => opt.value <= limits.competitors || opt.value === settings.scanPreferences.maxCompetitors)
-               .map(opt => {
+                { value: 5, badge: null },
+                { value: 10, badge: 'STARTER' },
+                { value: 15, badge: 'PRO' },
+                { value: 999, label: 'Unlimited', badge: 'BUSINESS' }
+              ].map(opt => {
                 const isLocked = opt.value > limits.competitors
+                const isSelected = opt.value === 999 
+                  ? settings.scanPreferences.maxCompetitors >= 999 
+                  : settings.scanPreferences.maxCompetitors === opt.value
+                
                 return (
                   <button
                     key={opt.value}
@@ -358,15 +359,23 @@ export default function SettingsView() {
                         showSaved()
                       }
                     }}
-                    className={`px-5 py-2 rounded-lg border text-sm font-medium transition flex items-center gap-2 ${
-                      settings.scanPreferences.maxCompetitors === opt.value
+                    disabled={isLocked}
+                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition flex items-center gap-2 ${
+                      isSelected
                         ? 'bg-indigo-600 border-indigo-500 text-white'
                         : isLocked
-                        ? 'bg-slate-800/50 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-500 cursor-not-allowed'
-                        : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                        ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-not-allowed opacity-60'
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
                     }`}
                   >
                     {opt.label || opt.value}
+                    {opt.badge && (
+                      <span className={`ml-1 px-1.5 py-0.5 rounded text-xs font-semibold ${
+                        isLocked ? 'bg-slate-700 text-slate-500' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      }`}>
+                        {opt.badge}
+                      </span>
+                    )}
                     {isLocked && <Lock className="w-3 h-3" />}
                   </button>
                 )
@@ -374,21 +383,17 @@ export default function SettingsView() {
             </div>
           </div>
 
-          {/* Scan Frequency */}
+          {/* Automated Refresh Frequency */}
           <div>
-            <label className={labelClass}>
-              {t('settings.frequency')}
-              {settings.scanPreferences.scanFrequency !== 'manual' && (
-                <span className="ml-2 px-1.5 py-0.5 bg-amber-500/10 text-amber-400 text-xs rounded border border-amber-500/30">{t('settings.pro_badge')}</span>
-              )}
-            </label>
+            <label className={labelClass}>Automated Refresh Frequency</label>
             <div className="flex gap-2">
               {([
-                { value: 'manual' as const, label: 'Manual', minPlan: 'free' },
-                { value: 'daily' as const, label: 'Daily (Auto)', minPlan: 'starter' },
-                { value: 'weekly' as const, label: 'Weekly (Auto)', minPlan: 'starter' },
+                { value: 'daily' as const, label: 'Daily (Auto)', badge: 'STARTER', minPlan: 'starter' },
+                { value: 'hourly' as const, label: 'Hourly (Auto)', badge: 'PRO', minPlan: 'pro' },
               ]).map(freq => {
-                const isLocked = !limits.refreshAuto && freq.value !== 'manual'
+                const isLocked = plan === 'free' || (freq.value === 'hourly' && !['pro', 'business', 'enterprise'].includes(plan))
+                const isSelected = settings.scanPreferences.scanFrequency === freq.value
+                
                 return (
                   <button
                     key={freq.value}
@@ -400,59 +405,112 @@ export default function SettingsView() {
                         showSaved()
                       }
                     }}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-lg border text-sm font-medium transition ${
-                      settings.scanPreferences.scanFrequency === freq.value
+                    disabled={isLocked}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition ${
+                      isSelected
                         ? 'bg-indigo-600 border-indigo-500 text-white'
                         : isLocked
-                        ? 'bg-slate-800/50 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-500 cursor-not-allowed'
-                        : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                        ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-not-allowed opacity-60'
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
                     }`}
                   >
                     {freq.label}
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                      isLocked ? 'bg-slate-700 text-slate-500' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {freq.badge}
+                    </span>
                     {isLocked && <Lock className="w-3 h-3" />}
                   </button>
                 )
               })}
             </div>
+            {plan === 'free' && (
+              <p className="text-xs text-slate-500 mt-2 italic">
+                Free plan: Manual refresh only. Upgrade for automated scans.
+              </p>
+            )}
           </div>
 
           {/* Target Regions */}
-          <div>
-            <label className={labelClass}>{t('settings.regions')}</label>
+          <div className={!limits.features.regionalFilter ? 'opacity-60' : ''}>
+            <label className={labelClass}>
+              Target Regions
+              {!limits.features.regionalFilter && (
+                <span className="ml-2 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded font-semibold border border-amber-500/30">
+                  PRO Feature
+                </span>
+              )}
+            </label>
+            {!limits.features.regionalFilter && (
+              <p className="text-xs text-slate-500 mb-3 italic">
+                Upgrade to Pro to filter competitors by geographic region.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               {REGIONS.map(region => (
                 <button
                   key={region}
-                  onClick={() => toggleRegion(region)}
+                  onClick={() => {
+                    if (!limits.features.regionalFilter) {
+                      setShowUpgradeModal(true)
+                    } else {
+                      toggleRegion(region)
+                      showSaved()
+                    }
+                  }}
+                  disabled={!limits.features.regionalFilter}
                   className={`px-4 py-2 rounded-lg border text-sm transition ${
-                    settings.scanPreferences.targetRegions.includes(region)
+                    limits.features.regionalFilter && settings.scanPreferences.targetRegions.includes(region)
                       ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-slate-800 light:bg-slate-100 border-slate-700 light:border-slate-300 text-slate-400 light:text-slate-700 hover:border-slate-600'
+                      : !limits.features.regionalFilter
+                      ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-not-allowed'
+                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
                   }`}
                 >
                   {region}
+                  {!limits.features.regionalFilter && <Lock className="w-3 h-3 ml-1 inline" />}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Watchlist */}
-          <div>
-            <label className={labelClass}>{t('settings.watchlist')}</label>
-            <p className="text-xs text-slate-500 mb-3">{t('settings.watchlist_hint')}</p>
+          {/* Competitors Watchlist */}
+          <div className={!limits.features.customWatchlist ? 'opacity-60' : ''}>
+            <label className={labelClass}>
+              Competitors Watchlist
+              {!limits.features.customWatchlist && (
+                <span className="ml-2 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded font-semibold border border-amber-500/30">
+                  PRO Feature
+                </span>
+              )}
+            </label>
+            <p className="text-xs text-slate-500 mb-3">
+              {limits.features.customWatchlist 
+                ? (settings.language === 'fr' ? 'Compagnies à toujours inclure dans les scans' : 'Companies to always include in scans')
+                : 'Upgrade to Pro to create a custom watchlist of competitors.'
+              }
+            </p>
             
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
                 value={watchlistInput}
-                onChange={e => setWatchlistInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addWatchlistItem()}
-                className={`${inputClass} flex-1`}
+                onChange={e => limits.features.customWatchlist && setWatchlistInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && limits.features.customWatchlist && addWatchlistItem()}
+                onClick={() => !limits.features.customWatchlist && setShowUpgradeModal(true)}
+                disabled={!limits.features.customWatchlist}
+                className={`${inputClass} flex-1 ${!limits.features.customWatchlist ? 'cursor-not-allowed opacity-60' : ''}`}
                 placeholder={settings.language === 'fr' ? 'Nom ou URL de la compagnie' : 'Company name or URL'}
               />
               <button
-                onClick={addWatchlistItem}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center"
+                onClick={() => limits.features.customWatchlist ? addWatchlistItem() : setShowUpgradeModal(true)}
+                disabled={!limits.features.customWatchlist}
+                className={`px-4 py-2 rounded-lg font-medium transition flex items-center justify-center ${
+                  limits.features.customWatchlist
+                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                }`}
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -463,7 +521,11 @@ export default function SettingsView() {
                 {settings.scanPreferences.watchlist.map(item => (
                   <div key={item} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
                     <span>{item}</span>
-                    <button onClick={() => removeWatchlistItem(item)} className="text-slate-500 hover:text-red-400 transition">
+                    <button 
+                      onClick={() => limits.features.customWatchlist && removeWatchlistItem(item)} 
+                      disabled={!limits.features.customWatchlist}
+                      className="text-slate-500 hover:text-red-400 transition"
+                    >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
