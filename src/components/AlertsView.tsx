@@ -357,6 +357,9 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
                       deleteConfirmTitle="Delete Alert?"
                       deleteConfirmMessage="This alert will be permanently removed from your dashboard."
                       isArchived={showArchived}
+                      shareTitle={alert.title}
+                      shareDescription={alert.description || ''}
+                      shareUrl={`https://wyzelens.com/dashboard`}
                     />
                     <div className="text-slate-500 text-sm flex-shrink-0">
                       {isExpanded ? '▲' : '▼'}
