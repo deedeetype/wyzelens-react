@@ -189,15 +189,27 @@ JSON array: [{
 async function generateInsightsAndAlerts(industry: string, news: any[], competitorNames: string[]) {
   console.log(`[REFRESH] Generating insights and alerts for ${industry}`)
   
-  const insightsPrompt = `3-4 strategic insights for ${industry}.
-Companies: ${competitorNames.slice(0, 5).join(', ')}
-News: ${news.slice(0, 8).map((n: any) => n.title).join('; ')}
-JSON: [{"type":"threat|opportunity|trend|recommendation","title":"X","description":"2-3 sentences","confidence":0.85,"impact":"high","action_items":["X"]}]`
+  const insightsPrompt = `Generate 3-4 strategic insights for the ${industry} industry.
 
-  const alertsPrompt = `5-7 alerts from ${industry} news.
-Companies: ${competitorNames.slice(0, 8).join(', ')}
-News: ${news.slice(0, 12).map((n: any) => n.title).join('; ')}
-JSON: [{"title":"X","description":"Context","priority":"critical|attention|info","category":"funding|product|hiring|news|market"}]`
+Competitors to monitor: ${competitorNames.slice(0, 5).join(', ')}
+
+Recent News (with context):
+${news.slice(0, 8).map((n: any) => `- ${n.title}\n  ${n.summary || 'No summary available'}`).join('\n\n')}
+
+Provide actionable strategic insights based on this news. Focus on competitive threats, opportunities, market trends, or strategic recommendations.
+
+JSON format: [{"type":"threat|opportunity|trend|recommendation","title":"X","description":"2-3 sentences with specific details","confidence":0.85,"impact":"high","action_items":["Specific action 1","Specific action 2"]}]`
+
+  const alertsPrompt = `Generate 5-7 high-priority alerts from ${industry} news.
+
+Companies to watch: ${competitorNames.slice(0, 8).join(', ')}
+
+Recent News (with context):
+${news.slice(0, 12).map((n: any) => `- ${n.title}\n  ${n.summary || 'No summary available'}`).join('\n\n')}
+
+Extract important events that require attention: funding rounds, product launches, hirings, market moves, partnerships, or significant announcements.
+
+JSON format: [{"title":"X","description":"Context and implications","priority":"critical|attention|info","category":"funding|product|hiring|news|market"}]`
 
   const [insightsResponse, alertsResponse] = await Promise.all([
     poeRequest(insightsPrompt),
