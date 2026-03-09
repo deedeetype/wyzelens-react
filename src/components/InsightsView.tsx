@@ -86,8 +86,14 @@ export default function InsightsView({ insights, loading, archiveInsightOptimist
     if (!confirm(`Delete ${selectedIds.size} insight(s)? This cannot be undone.`)) return
     const ids = Array.from(selectedIds)
     try {
-      await Promise.all(ids.map(id => handleDelete(id)))
+      await Promise.all(ids.map(id => deleteInsight(id)))
       setSelectedIds(new Set())
+      if (showArchived) {
+        await fetchArchived()
+      } else {
+        await refetch()
+      }
+      await fetchArchivedCount()
     } catch (error) {
       alert('Failed to delete insights')
     }

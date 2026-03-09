@@ -99,8 +99,14 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
     if (!confirm(`Delete ${selectedIds.size} alert(s)? This cannot be undone.`)) return
     const ids = Array.from(selectedIds)
     try {
-      await Promise.all(ids.map(id => handleDelete(id)))
+      await Promise.all(ids.map(id => deleteAlert(id)))
       setSelectedIds(new Set())
+      if (showArchived) {
+        await fetchArchived()
+      } else {
+        await refetch()
+      }
+      await fetchArchivedCount()
     } catch (error) {
       alert('Failed to delete alerts')
     }
