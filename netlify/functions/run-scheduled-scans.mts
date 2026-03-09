@@ -38,11 +38,10 @@ export const handler: Handler = async (event) => {
     console.log('[Cron] Starting plan-based auto-refresh check...');
     
     const now = new Date();
-    const isWeeklyWindow = now.getUTCDay() === 0 && now.getUTCHours() === 0; // Sunday midnight UTC
     const isDailyWindow = now.getUTCHours() === 0; // Every day midnight UTC
     
     console.log(`[Cron] Current time: ${now.toISOString()} (UTC day ${now.getUTCDay()}, hour ${now.getUTCHours()})`);
-    console.log(`[Cron] Windows: weekly=${isWeeklyWindow}, daily=${isDailyWindow}`);
+    console.log(`[Cron] Daily window: ${isDailyWindow}`);
     
     // Fetch all completed scans
     const { data: scans, error: scansError } = await supabase
@@ -87,11 +86,9 @@ export const handler: Handler = async (event) => {
       // Plan-based refresh logic
       switch (plan) {
         case 'free':
-          // Weekly: Sunday midnight UTC (if >6.5 days since last refresh)
-          if (isWeeklyWindow && hoursSinceRefresh >= 156) {
-            shouldRefresh = true;
-            reason = 'weekly (free plan)';
-          }
+          // FREE plan has NO automated refresh
+          // Users must use manual refresh (1/day limit enforced in UI/API)
+          // Do not auto-refresh free scans
           break;
         
         case 'starter':
@@ -113,11 +110,9 @@ export const handler: Handler = async (event) => {
           break;
         
         default:
-          console.warn(`[Cron] Unknown plan "${plan}" for scan ${scan.id}, treating as free`);
-          if (isWeeklyWindow && hoursSinceRefresh >= 156) {
-            shouldRefresh = true;
-            reason = 'weekly (unknown plan, default to free)';
-          }
+          // Unknown plan: treat as FREE (no auto-refresh)
+          console.warn(`[Cron] Unknown plan "${plan}" for scan ${scan.id}, treating as free (no auto-refresh)`);
+          break;
       }
       
       if (shouldRefresh) {
