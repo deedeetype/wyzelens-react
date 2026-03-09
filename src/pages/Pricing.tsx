@@ -47,7 +47,7 @@ export default function Pricing() {
         '1 industry profile',
         '5 competitors per scan',
         '1 manual refresh/day',
-        'No automated refresh',
+        'Weekly automated refresh',
         '7 days history',
         'Email support'
       ],
