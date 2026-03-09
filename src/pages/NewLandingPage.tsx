@@ -636,8 +636,8 @@ export default function NewLandingPage() {
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
             <div>© 2026 Labwyze Inc. All rights reserved.</div>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-white transition">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition">Terms of Service</a>
+              <Link to="/privacy" className="hover:text-white transition">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-white transition">Terms of Service</Link>
             </div>
           </div>
         </div>
