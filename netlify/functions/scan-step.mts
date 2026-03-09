@@ -470,18 +470,32 @@ async function stepCompetitors(industry: string, scanId: string, companyUrl?: st
     prompt = `I run a company with this website: ${companyUrl}
 We operate in the ${industry} industry.
 
-Find our most relevant direct competitors (companies offering similar products/services to similar customers).${regionStr}
-Return up to ${max} competitors. Quality over quantity.${watchlistStr}
+Find EXACTLY ${max} direct competitors (companies offering similar products/services to similar customers).${regionStr}
+You MUST return ${max} competitors. If direct competitors are limited, include indirect competitors, adjacent players, or emerging alternatives to reach the required count.${watchlistStr}
 
 For each competitor provide:
 - name
 - domain (website)  
 - description (1-2 sentences explaining what they do and why they're a competitor)
-- position (e.g. "Direct Competitor", "Market Leader", "Emerging Threat", "Niche Player")
+- position (e.g. "Direct Competitor", "Market Leader", "Emerging Threat", "Niche Player", "Adjacent Player")
 
-JSON array: [{name, domain, description, position}]`
+JSON array: [{name, domain, description, position}]
+
+CRITICAL: You must return ${max} results. Do not return fewer than requested.`
   } else {
-    prompt = `List the top ${max} most significant companies in the ${industry} industry as of 2025-2026.${regionStr} Include market leaders and notable startups. Use current data only.${watchlistStr} JSON array: [{name, domain, description (1-2 sentences), position}]`
+    prompt = `List EXACTLY ${max} companies in the ${industry} industry as of 2025-2026.${regionStr}
+Include market leaders, established players, and notable emerging companies to reach exactly ${max} results.
+Use current data only.${watchlistStr}
+
+For each company provide:
+- name
+- domain (website)
+- description (1-2 sentences)
+- position (e.g. "Market Leader", "Emerging Player", "Established Competitor")
+
+JSON array: [{name, domain, description, position}]
+
+CRITICAL: You must return ${max} results. Do not return fewer than requested.`
   }
 
   const res = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -490,16 +504,20 @@ JSON array: [{name, domain, description, position}]`
     body: JSON.stringify({
       model: 'sonar-pro',
       messages: [
-        { role: 'system', content: 'Business intelligence analyst specializing in competitive analysis. Respond with valid JSON only. Be selective — only include truly relevant competitors.' },
+        { role: 'system', content: `Business intelligence analyst specializing in competitive analysis. You MUST always return EXACTLY the requested number of competitors (${max}). Respond with valid JSON only. Include direct competitors first, then indirect/adjacent players to meet the count requirement. Never return fewer results than requested.` },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.3, max_tokens: 2000
+      temperature: 0.4, max_tokens: 2500
     })
   })
   const data = await res.json()
   const companies = parseJsonArray(data.choices[0].message.content)
     .filter((c: any) => c.name)
-    .slice(0, max)
+  
+  // Log if we didn't get the requested count
+  if (companies.length < max) {
+    console.warn(`[COMPETITORS] Only received ${companies.length}/${max} competitors. Prompt may need adjustment.`)
+  }
   
   return { companies, count: companies.length }
 }
