@@ -109,7 +109,7 @@ export default function NewLandingPage() {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-6 animate-fade-in">
               <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm text-indigo-300">Powered by Advanced AI</span>
+              <span className="text-sm text-indigo-300">Powered by Advanced AI Models</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-indigo-200 to-purple-200 text-transparent bg-clip-text leading-tight">

@@ -134,7 +134,7 @@ export default function Pricing() {
         'SLA guarantee'
       ],
       cta: 'Contact Sales',
-      href: 'mailto:david.laborieux@labwyze.com',
+      href: 'mailto:sales@labwyze.com',
       highlighted: false,
       planId: 'enterprise'
     }
