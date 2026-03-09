@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useUser } from '@clerk/react'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw, Lock, Crown, Settings } from 'lucide-react'
+import { Settings as SettingsIcon, User, Building, Globe, Bell, Zap, Save, Plus, X, Moon, Sun, RefreshCw, Lock, Crown, Settings, Mail, HelpCircle } from 'lucide-react'
 import UpgradeModal from './UpgradeModal'
 import { INDUSTRIES } from '@/constants/industries'
 
@@ -472,6 +472,32 @@ export default function SettingsView() {
             ) : (
               <p className="text-sm text-slate-600 italic">{settings.language === 'fr' ? 'Aucune compagnie dans la liste' : 'No companies in watchlist'}</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Support Section */}
+      <div className={cardClass}>
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+            <HelpCircle className="w-6 h-6 text-indigo-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white light:text-slate-900 mb-2">
+              {settings.language === 'fr' ? 'Besoin d\'aide ?' : 'Need Help?'}
+            </h3>
+            <p className="text-slate-400 light:text-slate-600 mb-4">
+              {settings.language === 'fr' 
+                ? 'Notre équipe de support est là pour vous aider avec toutes vos questions sur WyzeLens.'
+                : 'Our support team is here to help you with any questions about WyzeLens.'}
+            </p>
+            <a
+              href="mailto:support@labwyze.com?subject=WyzeLens Support Request"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
+            >
+              <Mail className="w-4 h-4" />
+              {settings.language === 'fr' ? 'Contacter le Support' : 'Contact Support'}
+            </a>
           </div>
         </div>
       </div>
