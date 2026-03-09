@@ -59,7 +59,7 @@ export default function NewLandingPage() {
               <div className="ml-10 flex items-baseline space-x-8">
                 <a href="#features" className="text-gray-300 hover:text-white transition">Features</a>
                 <a href="#how-it-works" className="text-gray-300 hover:text-white transition">How it Works</a>
-                <Link to="/pricing" className="text-gray-300 hover:text-white transition">Pricing</Link>
+                <a href="#pricing" className="text-gray-300 hover:text-white transition">Pricing</a>
                 <Link to="/sign-in" className="text-gray-300 hover:text-white transition">Sign In</Link>
                 <Link 
                   to="/sign-up"
@@ -87,7 +87,7 @@ export default function NewLandingPage() {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <a href="#features" className="block px-3 py-2 text-gray-300 hover:text-white transition">Features</a>
               <a href="#how-it-works" className="block px-3 py-2 text-gray-300 hover:text-white transition">How it Works</a>
-              <Link to="/pricing" className="block px-3 py-2 text-gray-300 hover:text-white transition">Pricing</Link>
+              <a href="#pricing" className="block px-3 py-2 text-gray-300 hover:text-white transition">Pricing</a>
               <Link to="/sign-in" className="block px-3 py-2 text-gray-300 hover:text-white transition">Sign In</Link>
               <Link to="/sign-up" className="block px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold text-center">
                 Get Started
@@ -555,6 +555,162 @@ export default function NewLandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4 bg-gradient-to-b from-slate-950 to-slate-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-400">
+              Start free, scale as you grow. No surprises.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
+            {[
+              {
+                name: 'Free',
+                price: '$0',
+                period: '/forever',
+                description: 'Perfect for getting started',
+                features: [
+                  '1 industry profile',
+                  '5 competitors per scan',
+                  '1 manual refresh/day',
+                  'Weekly automated refresh',
+                  '7 days history',
+                  'Email support'
+                ],
+                cta: 'Start Free',
+                highlighted: false
+              },
+              {
+                name: 'Starter',
+                price: '$8',
+                period: '/month',
+                description: 'For individuals & freelancers',
+                features: [
+                  '3 industry profiles',
+                  '10 competitors per scan',
+                  '3 manual refreshes/day',
+                  'Daily automated refresh',
+                  '30 days history',
+                  'Priority email support'
+                ],
+                cta: 'Start Free Trial',
+                highlighted: false
+              },
+              {
+                name: 'Pro',
+                price: '$20',
+                period: '/month',
+                description: 'For growing teams',
+                features: [
+                  '5 industry profiles',
+                  '15 competitors per scan',
+                  'Unlimited manual refreshes',
+                  'Hourly automated refresh',
+                  'Custom watchlist',
+                  'Regional filters',
+                  '90 days history',
+                  'Priority support'
+                ],
+                cta: 'Start Free Trial',
+                highlighted: true,
+                badge: 'MOST POPULAR'
+              },
+              {
+                name: 'Business',
+                price: '$49',
+                period: '/month',
+                description: 'For established companies',
+                features: [
+                  '10 industry profiles',
+                  'Unlimited competitors',
+                  'Unlimited manual refreshes',
+                  'Hourly automated refresh',
+                  'Advanced analytics',
+                  'API access',
+                  'Unlimited history',
+                  'Dedicated support'
+                ],
+                cta: 'Start Free Trial',
+                highlighted: false
+              },
+              {
+                name: 'Enterprise',
+                price: 'Custom',
+                period: '',
+                description: 'For large organizations',
+                features: [
+                  'Custom profiles',
+                  'White-label options',
+                  'Custom integrations',
+                  'SLA guarantees',
+                  'On-premise deployment',
+                  'Dedicated account manager',
+                  '24/7 phone support',
+                  'Custom contract'
+                ],
+                cta: 'Contact Sales',
+                highlighted: false
+              }
+            ].map((plan, i) => (
+              <div
+                key={i}
+                className={`relative rounded-2xl p-6 transition-all hover:scale-105 ${
+                  plan.highlighted
+                    ? 'bg-gradient-to-b from-indigo-500/10 to-purple-500/10 border-2 border-indigo-500/50 shadow-xl shadow-indigo-500/20'
+                    : 'bg-slate-900/50 border border-slate-800'
+                }`}
+              >
+                {plan.badge && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      {plan.badge}
+                    </span>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-4xl font-bold">{plan.price}</span>
+                    {plan.period && <span className="text-slate-400">{plan.period}</span>}
+                  </div>
+                  <p className="text-sm text-slate-400">{plan.description}</p>
+                </div>
+
+                <Link
+                  to="/sign-up"
+                  className={`block w-full py-3 px-4 rounded-lg font-semibold text-center transition mb-6 ${
+                    plan.highlighted
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
+                      : 'bg-slate-800 hover:bg-slate-700'
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
+
+                <div className="space-y-3">
+                  {plan.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-slate-300">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center text-sm text-slate-400">
+            <p>All paid plans include a 14-day free trial. No credit card required.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
@@ -618,7 +774,7 @@ export default function NewLandingPage() {
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#features" className="hover:text-white transition">Features</a></li>
-                <li><Link to="/pricing" className="hover:text-white transition">Pricing</Link></li>
+                <li><a href="#pricing" className="hover:text-white transition">Pricing</a></li>
                 <li><a href="#how-it-works" className="hover:text-white transition">How it Works</a></li>
               </ul>
             </div>
