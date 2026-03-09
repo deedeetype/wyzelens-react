@@ -235,7 +235,7 @@ export default function NewLandingPage() {
                   'Auto-detect competitors from industry',
                   'Track up to 100+ companies',
                   'Monitor funding rounds & acquisitions',
-                  'Real-time profile updates'
+                  'Real-time intelligence updates'
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-gray-300">
                     <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
@@ -368,7 +368,7 @@ export default function NewLandingPage() {
                   'Real-time competitive alerts',
                   'Smart noise filtering',
                   'Priority-based notifications',
-                  'Weekly digest summaries'
+                  'Weekly digest summaries (coming soon)'
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-gray-300">
                     <CheckCircle2 className="w-5 h-5 text-red-400 flex-shrink-0" />
@@ -435,8 +435,8 @@ export default function NewLandingPage() {
               </p>
               <ul className="space-y-3">
                 {[
-                  'Real-time news aggregation from 100+ sources',
-                  'Automated daily/weekly profile refreshes',
+                  'Real-time news aggregation from thousands of sources',
+                  'Automated hourly/daily/weekly profile refreshes',
                   'Smart deduplication and ranking',
                   'Date-grouped news feed for easy scanning'
                 ].map((item, i) => (
@@ -510,7 +510,7 @@ export default function NewLandingPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"> 3 Simple Steps</span>
             </h2>
             <p className="text-xl text-gray-400">
-              From setup to insights in under 5 minutes
+              From setup to insights in under 3 minutes
             </p>
           </div>
 
@@ -526,7 +526,7 @@ export default function NewLandingPage() {
                 step: '02',
                 icon: Sparkles,
                 title: 'AI Analyzes Everything',
-                description: 'We scan news, social media, funding data, and market signals 24/7 to build your competitive intelligence dashboard.'
+                description: 'We scan news, social media, funding data, and market signals 24/7 to build your industry intelligence dashboard.'
               },
               {
                 step: '03',
@@ -605,7 +605,7 @@ export default function NewLandingPage() {
                 name: 'Pro',
                 price: '$20',
                 period: '/month',
-                description: 'For growing teams',
+                description: 'For heavy users',
                 features: [
                   '5 industry profiles',
                   '15 competitors per scan',
@@ -624,7 +624,7 @@ export default function NewLandingPage() {
                 name: 'Business',
                 price: '$49',
                 period: '/month',
-                description: 'For established businesses',
+                description: 'For businesses',
                 features: [
                   '10 industry profiles',
                   'Unlimited competitors',
@@ -634,7 +634,11 @@ export default function NewLandingPage() {
                   'Regional filters',
                   'Unlimited history',
                   'Dedicated support',
-                  'API access (soon)'
+                  'API access (soon)',
+                  'Daily Digest (soon)',
+                  'Slack Webhook (soon)',
+                  'Email Alerts (soon)',
+                  'Export Reports (soon)',
                 ],
                 cta: 'Get Started',
                 highlighted: false
@@ -655,7 +659,11 @@ export default function NewLandingPage() {
                   'White-label reports',
                   'Dedicated account manager',
                   'Custom integrations',
-                  'SLA guarantee'
+                  'API access (soon)',
+                  'Daily Digest (soon)',
+                  'Slack Webhook (soon)',
+                  'Email Alerts (soon)',
+                  'Export Reports (soon)',
                 ],
                 cta: 'Contact Sales',
                 highlighted: false
@@ -720,10 +728,10 @@ export default function NewLandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             {[
-              { value: '10K+', label: 'Companies Tracked' },
-              { value: '500K+', label: 'Data Points Daily' },
-              { value: '99.9%', label: 'Uptime Reliability' },
-              { value: '<5min', label: 'Setup Time' }
+              { value: '94%+', label: 'Insight Relevance Rate' },
+              { value: '6.8hrs+', label: 'Time Saved per User per Week' },
+              { value: '45sec', label: 'Intelligence Refresh Time' },
+              { value: '<3min', label: 'Setup Time' }
             ].map((stat, i) => (
               <div key={i}>
                 <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text mb-2">
