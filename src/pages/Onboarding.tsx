@@ -5,8 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { INDUSTRIES } from '@/constants/industries'
 import { 
   Briefcase, 
-  Globe, 
-  Target, 
   ArrowRight, 
   Check,
   Sparkles,
@@ -24,10 +22,8 @@ export default function Onboarding() {
   const [companyName, setCompanyName] = useState('')
   const [companyUrl, setCompanyUrl] = useState('')
   const [industry, setIndustry] = useState('')
-  const [competitorCount, setCompetitorCount] = useState('5')
-  const [regions, setRegions] = useState<string[]>(['Global'])
   
-  const totalSteps = 3
+  const totalSteps = 2
   
   const handleComplete = async () => {
     setLoading(true)
@@ -42,9 +38,7 @@ export default function Onboarding() {
           onboardingData: {
             companyName,
             companyUrl,
-            industry,
-            competitorCount: parseInt(competitorCount),
-            regions
+            industry
           }
         }
       })
@@ -63,8 +57,6 @@ export default function Onboarding() {
         return companyName.trim().length > 0
       case 2:
         return industry.length > 0
-      case 3:
-        return true
       default:
         return false
     }
@@ -161,59 +153,6 @@ export default function Onboarding() {
                   <Sparkles className="w-4 h-4 inline mr-1" />
                   Don't worry! You can create additional industry profiles later to track multiple markets.
                 </p>
-              </div>
-            </div>
-          )}
-          
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Target className="w-8 h-8 text-green-400" />
-                </div>
-                <h2 className="text-xl font-semibold text-white mb-2">Customize your monitoring</h2>
-                <p className="text-slate-400">Fine-tune how we track your competitive landscape</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Number of competitors to track
-                </label>
-                <select
-                  value={competitorCount}
-                  onChange={(e) => setCompetitorCount(e.target.value)}
-                  className="w-full bg-slate-800 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-indigo-500 focus:outline-none"
-                >
-                  <option value="3">Top 3 competitors</option>
-                  <option value="5">Top 5 competitors</option>
-                  <option value="10">Top 10 competitors</option>
-                  <option value="15">Top 15 competitors</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Geographic focus
-                </label>
-                <div className="space-y-2">
-                  {['Global', 'North America', 'Europe', 'Asia Pacific', 'Latin America'].map(region => (
-                    <label key={region} className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg cursor-pointer hover:bg-slate-700 transition">
-                      <input
-                        type="checkbox"
-                        checked={regions.includes(region)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setRegions([...regions, region])
-                          } else {
-                            setRegions(regions.filter(r => r !== region))
-                          }
-                        }}
-                        className="w-4 h-4 rounded border-slate-600 text-indigo-500 focus:ring-indigo-500 bg-slate-700"
-                      />
-                      <span className="text-white">{region}</span>
-                    </label>
-                  ))}
-                </div>
               </div>
             </div>
           )}
