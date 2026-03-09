@@ -359,12 +359,11 @@ export default function SettingsView() {
                         showSaved()
                       }
                     }}
-                    disabled={isLocked}
                     className={`px-4 py-2 rounded-lg border text-sm font-medium transition flex items-center gap-2 ${
                       isSelected
                         ? 'bg-indigo-600 border-indigo-500 text-white'
                         : isLocked
-                        ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-not-allowed opacity-60'
+                        ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-pointer opacity-60 hover:opacity-80'
                         : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
                     }`}
                   >
@@ -405,12 +404,11 @@ export default function SettingsView() {
                         showSaved()
                       }
                     }}
-                    disabled={isLocked}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition ${
                       isSelected
                         ? 'bg-indigo-600 border-indigo-500 text-white'
                         : isLocked
-                        ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-not-allowed opacity-60'
+                        ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-pointer opacity-60 hover:opacity-80'
                         : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
                     }`}
                   >
@@ -459,12 +457,11 @@ export default function SettingsView() {
                       showSaved()
                     }
                   }}
-                  disabled={!limits.features.regionalFilter}
                   className={`px-4 py-2 rounded-lg border text-sm transition ${
                     limits.features.regionalFilter && settings.scanPreferences.targetRegions.includes(region)
                       ? 'bg-indigo-600 border-indigo-500 text-white'
                       : !limits.features.regionalFilter
-                      ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-not-allowed'
+                      ? 'bg-slate-800/50 border-slate-700/50 text-slate-600 cursor-pointer hover:opacity-80'
                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
                   }`}
                 >
@@ -499,17 +496,15 @@ export default function SettingsView() {
                 onChange={e => limits.features.customWatchlist && setWatchlistInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && limits.features.customWatchlist && addWatchlistItem()}
                 onClick={() => !limits.features.customWatchlist && setShowUpgradeModal(true)}
-                disabled={!limits.features.customWatchlist}
-                className={`${inputClass} flex-1 ${!limits.features.customWatchlist ? 'cursor-not-allowed opacity-60' : ''}`}
+                className={`${inputClass} flex-1 ${!limits.features.customWatchlist ? 'cursor-pointer opacity-60' : ''}`}
                 placeholder={settings.language === 'fr' ? 'Nom ou URL de la compagnie' : 'Company name or URL'}
               />
               <button
                 onClick={() => limits.features.customWatchlist ? addWatchlistItem() : setShowUpgradeModal(true)}
-                disabled={!limits.features.customWatchlist}
                 className={`px-4 py-2 rounded-lg font-medium transition flex items-center justify-center ${
                   limits.features.customWatchlist
                     ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-700 text-slate-500 cursor-pointer hover:bg-slate-600'
                 }`}
               >
                 <Plus className="w-5 h-5" />
