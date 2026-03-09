@@ -225,14 +225,14 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
 
   const handleShareLinkedIn = (item: any) => {
     const text = `${item.title}\n\n${item.summary || ''}\n\nvia WyzeLens`
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://wyzelens.com/dashboard')}`
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://wyzelens.com')}`
     window.open(url, '_blank', 'width=600,height=600')
     setShowShareMenu(null)
   }
 
   const handleShareTwitter = (item: any) => {
     const text = `${item.title}\n\n${item.summary || ''}\n\nvia @WyzeLens`
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://wyzelens.com/dashboard')}`
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://wyzelens.com')}`
     window.open(url, '_blank', 'width=600,height=600')
     setShowShareMenu(null)
   }

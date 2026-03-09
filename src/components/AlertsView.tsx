@@ -359,7 +359,6 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
                       isArchived={showArchived}
                       shareTitle={alert.title}
                       shareDescription={alert.description || ''}
-                      shareUrl={`https://wyzelens.com/dashboard`}
                     />
                     <div className="text-slate-500 text-sm flex-shrink-0">
                       {isExpanded ? '▲' : '▼'}

@@ -43,7 +43,7 @@ export default function ActionMenu({
 
   const handleShareLinkedIn = () => {
     const text = `${shareTitle}\n\n${shareDescription || ''}\n\nvia WyzeLens`
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://wyzelens.com')}`
     window.open(url, '_blank', 'width=600,height=600')
     setShowShareMenu(false)
     setShowMenu(false)
@@ -51,7 +51,7 @@ export default function ActionMenu({
 
   const handleShareTwitter = () => {
     const text = `${shareTitle}\n\n${shareDescription || ''}\n\nvia @WyzeLens`
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://wyzelens.com')}`
     window.open(url, '_blank', 'width=600,height=600')
     setShowShareMenu(false)
     setShowMenu(false)

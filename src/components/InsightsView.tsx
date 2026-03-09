@@ -327,7 +327,6 @@ export default function InsightsView({ insights, loading, archiveInsightOptimist
                       isArchived={showArchived}
                       shareTitle={insight.title}
                       shareDescription={insight.description}
-                      shareUrl={`https://wyzelens.com/dashboard`}
                     />
                     <button className="text-slate-400 hover:text-white">
                       <svg className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
