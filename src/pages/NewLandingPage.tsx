@@ -578,11 +578,11 @@ export default function NewLandingPage() {
                   '1 industry profile',
                   '5 competitors per scan',
                   '1 manual refresh/day',
-                  'Weekly automated refresh',
+                  'No automated refresh',
                   '7 days history',
                   'Email support'
                 ],
-                cta: 'Start Free',
+                cta: 'Get Started',
                 highlighted: false
               },
               {
@@ -598,7 +598,7 @@ export default function NewLandingPage() {
                   '30 days history',
                   'Priority email support'
                 ],
-                cta: 'Start Free Trial',
+                cta: 'Get Started',
                 highlighted: false
               },
               {
@@ -611,12 +611,12 @@ export default function NewLandingPage() {
                   '15 competitors per scan',
                   'Unlimited manual refreshes',
                   'Hourly automated refresh',
-                  'Custom watchlist',
+                  'Custom competitor watchlist',
                   'Regional filters',
                   '90 days history',
                   'Priority support'
                 ],
-                cta: 'Start Free Trial',
+                cta: 'Get Started',
                 highlighted: true,
                 badge: 'MOST POPULAR'
               },
@@ -624,18 +624,19 @@ export default function NewLandingPage() {
                 name: 'Business',
                 price: '$49',
                 period: '/month',
-                description: 'For established companies',
+                description: 'For established businesses',
                 features: [
                   '10 industry profiles',
                   'Unlimited competitors',
                   'Unlimited manual refreshes',
                   'Hourly automated refresh',
-                  'Advanced analytics',
-                  'API access',
+                  'Custom competitor watchlist',
+                  'Regional filters',
                   'Unlimited history',
-                  'Dedicated support'
+                  'Dedicated support',
+                  'API access (soon)'
                 ],
-                cta: 'Start Free Trial',
+                cta: 'Get Started',
                 highlighted: false
               },
               {
@@ -644,14 +645,17 @@ export default function NewLandingPage() {
                 period: '',
                 description: 'For large organizations',
                 features: [
-                  'Custom profiles',
-                  'White-label options',
-                  'Custom integrations',
-                  'SLA guarantees',
-                  'On-premise deployment',
+                  'Unlimited industry profiles',
+                  'Unlimited competitors',
+                  'Unlimited manual refreshes',
+                  'Hourly automated refresh',
+                  'Custom competitor watchlist',
+                  'Regional filters',
+                  'Unlimited history',
+                  'White-label reports',
                   'Dedicated account manager',
-                  '24/7 phone support',
-                  'Custom contract'
+                  'Custom integrations',
+                  'SLA guarantee'
                 ],
                 cta: 'Contact Sales',
                 highlighted: false
@@ -706,7 +710,7 @@ export default function NewLandingPage() {
           </div>
 
           <div className="text-center text-sm text-slate-400">
-            <p>All paid plans include a 14-day free trial. No credit card required.</p>
+            <p>No credit card required to get started.</p>
           </div>
         </div>
       </section>
