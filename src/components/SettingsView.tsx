@@ -110,25 +110,43 @@ export default function SettingsView() {
 
       {/* Removed Section Tabs - Settings is now single page */}
 
-      {/* Auto-refresh notice */}
-      <div className={`${cardClass} mb-6 bg-indigo-600/10 border-indigo-500/30`}>
-        <div className="flex items-start gap-3">
-          <RefreshCw className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-base font-bold text-indigo-300 mb-1">Automated Refresh Schedule</h3>
-            <p className="text-sm text-slate-300">
-              Your scans auto-refresh <span className="font-semibold text-white">
-              {plan === 'free' ? 'weekly (Sunday midnight UTC)' : 
-               plan === 'starter' ? 'daily (midnight UTC)' : 
-               'hourly'}
-              </span> based on your <span className="capitalize font-semibold text-white">{plan}</span> plan.
-            </p>
-            <p className="text-xs text-slate-400 mt-2">
-              All refresh activity is tracked in the Activity tab.
-            </p>
+      {/* Auto-refresh notice - Only for plans with automated refresh */}
+      {plan !== 'free' && (
+        <div className={`${cardClass} mb-6 bg-indigo-600/10 border-indigo-500/30`}>
+          <div className="flex items-start gap-3">
+            <RefreshCw className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-base font-bold text-indigo-300 mb-1">Automated Refresh Schedule</h3>
+              <p className="text-sm text-slate-300">
+                Your scans auto-refresh <span className="font-semibold text-white">
+                {plan === 'starter' ? 'daily (midnight UTC)' : 'hourly'}
+                </span> based on your <span className="capitalize font-semibold text-white">{plan}</span> plan.
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
+                All refresh activity is tracked in the Activity tab.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Free plan manual refresh notice */}
+      {plan === 'free' && (
+        <div className={`${cardClass} mb-6 bg-slate-800/50 border-slate-700`}>
+          <div className="flex items-start gap-3">
+            <RefreshCw className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-base font-bold text-slate-300 mb-1">Manual Refresh Only</h3>
+              <p className="text-sm text-slate-400">
+                Free plan includes <span className="font-semibold text-white">1 manual refresh per day</span>.
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Upgrade to Starter for daily automated scans, or Pro for hourly updates.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Subscription Management - Only show for paid plans */}
       {plan !== 'free' && (
