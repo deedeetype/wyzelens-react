@@ -16,6 +16,8 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [showArchived, setShowArchived] = useState(false)
+  const [sortBy, setSortBy] = useState<'date' | 'new' | 'priority'>('date')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchArchivedCount()
@@ -36,17 +38,28 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
       return true
     })
     .sort((a, b) => {
-      // Sort by priority: critical > attention > info
-      const priorityOrder: Record<string, number> = {
-        critical: 0,
-        attention: 1,
-        info: 2
+      // Sort by selected option
+      if (sortBy === 'new') {
+        // NEW badges first
+        if (a.is_new && !b.is_new) return -1
+        if (!a.is_new && b.is_new) return 1
+        // Then by date
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      } else if (sortBy === 'priority') {
+        // Sort by priority: critical > attention > info
+        const priorityOrder: Record<string, number> = {
+          critical: 0,
+          attention: 1,
+          info: 2
+        }
+        const priorityDiff = (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2)
+        if (priorityDiff !== 0) return priorityDiff
+        // Within same priority, sort by date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      } else {
+        // Default: sort by date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       }
-      const priorityDiff = (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2)
-      if (priorityDiff !== 0) return priorityDiff
-      
-      // Within same priority, sort by date (newest first)
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
   const handleArchive = async (alertId: string) => {
@@ -54,10 +67,63 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
       archiveAlertOptimistic(alertId)
       await archiveAlert(alertId)
       await fetchArchivedCount()
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        next.delete(alertId)
+        return next
+      })
     } catch (error) {
       await refetch()
       alert('Failed to archive alert')
     }
+  }
+
+  const handleBulkArchive = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    try {
+      await Promise.all(ids.map(id => {
+        archiveAlertOptimistic(id)
+        return archiveAlert(id)
+      }))
+      await fetchArchivedCount()
+      setSelectedIds(new Set())
+    } catch (error) {
+      await refetch()
+      alert('Failed to archive alerts')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} alert(s)? This cannot be undone.`)) return
+    const ids = Array.from(selectedIds)
+    try {
+      await Promise.all(ids.map(id => handleDelete(id)))
+      setSelectedIds(new Set())
+    } catch (error) {
+      alert('Failed to delete alerts')
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map(a => a.id)))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
   }
 
   const handleUnarchive = async (alertId: string) => {
@@ -135,9 +201,19 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
           </h2>
           <p className="text-slate-400 mt-1">
             {alerts.filter(a => !a.read).length} unread · {alerts.filter(a => a.priority === 'critical').length} critical
+            {selectedIds.size > 0 && <span className="text-indigo-400"> · {selectedIds.size} selected</span>}
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 text-sm"
+          >
+            <option value="date">Sort: Newest First</option>
+            <option value="new">Sort: NEW First</option>
+            <option value="priority">Sort: Priority</option>
+          </select>
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
@@ -170,6 +246,42 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {filtered.length > 0 && (
+        <div className="mb-4 p-3 bg-slate-800/50 border border-slate-700 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSelectAll}
+              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition"
+            >
+              {selectedIds.size === filtered.length ? 'Deselect All' : 'Select All'}
+            </button>
+            <span className="text-sm text-slate-400">
+              {selectedIds.size} of {filtered.length} selected
+            </span>
+          </div>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              {!showArchived && (
+                <button
+                  onClick={handleBulkArchive}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
+                >
+                  <Archive className="w-4 h-4" />
+                  Archive ({selectedIds.size})
+                </button>
+              )}
+              <button
+                onClick={handleBulkDelete}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                Delete ({selectedIds.size})
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Alerts List with Accordion */}
       <div className="space-y-3">
         {filtered.map((alert) => {
@@ -184,15 +296,27 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
             >
               {/* Alert Header - Always Visible */}
               <div
-                onClick={() => {
-                  setExpandedId(isExpanded ? null : alert.id)
-                  if (!alert.read) markAsRead(alert.id)
-                }}
-                className={`flex items-start gap-4 p-4 cursor-pointer transition ${
+                className={`flex items-start gap-4 p-4 transition ${
                   isExpanded ? 'bg-slate-800' : 'hover:bg-slate-800/50'
                 }`}
               >
-                <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${priorityDot(alert.priority)}`} />
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(alert.id)}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    toggleSelect(alert.id)
+                  }}
+                  className="mt-1.5 w-4 h-4 rounded border-slate-600 bg-slate-700 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer"
+                />
+                <div 
+                  onClick={() => {
+                    setExpandedId(isExpanded ? null : alert.id)
+                    if (!alert.read) markAsRead(alert.id)
+                  }}
+                  className="flex items-start gap-4 flex-1 cursor-pointer"
+                >
+                  <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${priorityDot(alert.priority)}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-white font-medium">{alert.title}</span>
@@ -219,17 +343,18 @@ export default function AlertsView({ scanId }: { scanId?: string }) {
                     <span className="text-xs text-slate-500">{timeAgo(alert.created_at)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <ActionMenu
-                    itemId={alert.id}
-                    onArchive={showArchived ? handleUnarchive : handleArchive}
-                    onDelete={handleDelete}
-                    deleteConfirmTitle="Delete Alert?"
-                    deleteConfirmMessage="This alert will be permanently removed from your dashboard."
-                    isArchived={showArchived}
-                  />
-                  <div className="text-slate-500 text-sm flex-shrink-0">
-                    {isExpanded ? '▲' : '▼'}
+                  <div className="flex items-center gap-2">
+                    <ActionMenu
+                      itemId={alert.id}
+                      onArchive={showArchived ? handleUnarchive : handleArchive}
+                      onDelete={handleDelete}
+                      deleteConfirmTitle="Delete Alert?"
+                      deleteConfirmMessage="This alert will be permanently removed from your dashboard."
+                      isArchived={showArchived}
+                    />
+                    <div className="text-slate-500 text-sm flex-shrink-0">
+                      {isExpanded ? '▲' : '▼'}
+                    </div>
                   </div>
                 </div>
               </div>

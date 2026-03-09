@@ -15,6 +15,8 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
   const [showMenu, setShowMenu] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
+  const [sortBy, setSortBy] = useState<'date' | 'new'>('date')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   
   useEffect(() => {
     // Fetch archived count on mount and when scanId changes
@@ -29,11 +31,28 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
 
   const displayNews = showArchived ? archivedNews : news
   
-  const filteredNews = displayNews.filter(item => {
-    if (filterMode === 'unread') return !item.read
-    if (filterMode === 'read') return item.read
-    return true
-  })
+  const filteredNews = displayNews
+    .filter(item => {
+      if (filterMode === 'unread') return !item.read
+      if (filterMode === 'read') return item.read
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'new') {
+        // NEW badges first
+        if (a.is_new && !b.is_new) return -1
+        if (!a.is_new && b.is_new) return 1
+        // Then by date
+        const dateA = new Date(a.published_at || a.created_at).getTime()
+        const dateB = new Date(b.published_at || b.created_at).getTime()
+        return dateB - dateA
+      } else {
+        // Default: sort by date (newest first)
+        const dateA = new Date(a.published_at || a.created_at).getTime()
+        const dateB = new Date(b.published_at || b.created_at).getTime()
+        return dateB - dateA
+      }
+    })
   
   // Group news by date
   const groupNewsByDate = (newsItems: any[]) => {
@@ -114,11 +133,65 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
       
       // Update archived count
       await fetchArchivedCount()
+      
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        next.delete(newsId)
+        return next
+      })
     } catch (error) {
       // If backend fails, refetch to restore accurate state
       await refetch()
       alert('Failed to archive news')
     }
+  }
+
+  const handleBulkArchive = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    try {
+      await Promise.all(ids.map(id => {
+        archiveNewsOptimistic(id)
+        return archiveNews(id)
+      }))
+      await fetchArchivedCount()
+      setSelectedIds(new Set())
+    } catch (error) {
+      await refetch()
+      alert('Failed to archive news')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} news article(s)? This cannot be undone.`)) return
+    const ids = Array.from(selectedIds)
+    try {
+      await Promise.all(ids.map(id => handleDelete(id)))
+      setSelectedIds(new Set())
+    } catch (error) {
+      alert('Failed to delete news')
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredNews.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredNews.map(n => n.id)))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
   }
 
   const handleUnarchive = async (newsId: string) => {
@@ -156,11 +229,20 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
         </h2>
         <p className="text-slate-400 mt-1">
           {news.length} articles{news.filter(n => !n.read).length > 0 && <> · <span className="text-indigo-400">{news.filter(n => !n.read).length} unread</span></>}
+          {selectedIds.size > 0 && <span className="text-indigo-400"> · {selectedIds.size} selected</span>}
         </p>
       </div>
 
       {/* Filter buttons */}
-      <div className="mb-4 flex gap-2 flex-wrap">
+      <div className="mb-4 flex gap-2 flex-wrap items-center">
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700 text-sm"
+        >
+          <option value="date">Sort: Newest First</option>
+          <option value="new">Sort: NEW First</option>
+        </select>
         <button
           onClick={() => setFilterMode('all')}
           className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${
@@ -200,6 +282,42 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
         </button>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {filteredNews.length > 0 && (
+        <div className="mb-4 p-3 bg-slate-800/50 border border-slate-700 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSelectAll}
+              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition"
+            >
+              {selectedIds.size === filteredNews.length ? 'Deselect All' : 'Select All'}
+            </button>
+            <span className="text-sm text-slate-400">
+              {selectedIds.size} of {filteredNews.length} selected
+            </span>
+          </div>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              {!showArchived && (
+                <button
+                  onClick={handleBulkArchive}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
+                >
+                  <Archive className="w-4 h-4" />
+                  Archive ({selectedIds.size})
+                </button>
+              )}
+              <button
+                onClick={handleBulkDelete}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                Delete ({selectedIds.size})
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* News List with inline expansion - Grouped by date */}
       <div className="space-y-6">
         {Object.entries(groupedNews).map(([groupName, items]) => {
@@ -228,6 +346,15 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
                   : 'bg-slate-900 border-slate-800 hover:border-slate-700'
               }`}
             >
+              <input
+                type="checkbox"
+                checked={selectedIds.has(item.id)}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  toggleSelect(item.id)
+                }}
+                className="mt-2 w-4 h-4 rounded border-slate-600 bg-slate-700 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer"
+              />
               {!item.read && <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0" />}
               <div 
                 onClick={() => { 
