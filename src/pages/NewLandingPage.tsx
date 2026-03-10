@@ -60,6 +60,7 @@ export default function NewLandingPage() {
                 <a href="#features" className="text-gray-300 hover:text-white transition">Features</a>
                 <a href="#how-it-works" className="text-gray-300 hover:text-white transition">How it Works</a>
                 <a href="#pricing" className="text-gray-300 hover:text-white transition">Pricing</a>
+                <Link to="/blog" className="text-gray-300 hover:text-white transition">Blog</Link>
                 <Link to="/sign-in" className="text-gray-300 hover:text-white transition">Sign In</Link>
                 <Link 
                   to="/sign-up"
@@ -88,6 +89,7 @@ export default function NewLandingPage() {
               <a href="#features" className="block px-3 py-2 text-gray-300 hover:text-white transition">Features</a>
               <a href="#how-it-works" className="block px-3 py-2 text-gray-300 hover:text-white transition">How it Works</a>
               <a href="#pricing" className="block px-3 py-2 text-gray-300 hover:text-white transition">Pricing</a>
+              <Link to="/blog" className="block px-3 py-2 text-gray-300 hover:text-white transition">Blog</Link>
               <Link to="/sign-in" className="block px-3 py-2 text-gray-300 hover:text-white transition">Sign In</Link>
               <Link to="/sign-up" className="block px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold text-center">
                 Get Started
@@ -908,6 +910,7 @@ export default function NewLandingPage() {
                 <li><a href="#features" className="hover:text-white transition">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white transition">Pricing</a></li>
                 <li><a href="#how-it-works" className="hover:text-white transition">How it Works</a></li>
+                <li><Link to="/blog" className="hover:text-white transition">Blog</Link></li>
               </ul>
             </div>
 
