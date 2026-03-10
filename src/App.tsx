@@ -9,6 +9,10 @@ import Pricing from '@/pages/Pricing'
 import Onboarding from '@/pages/Onboarding'
 import PrivacyPolicy from '@/pages/PrivacyPolicy'
 import TermsOfService from '@/pages/TermsOfService'
+import BlogList from '@/pages/blog/BlogList'
+import BestCITools2026 from '@/pages/blog/BestCITools2026'
+import CrayonKlueWyzeLens from '@/pages/blog/CrayonKlueWyzeLens'
+import AICompetitorTracking from '@/pages/blog/AICompetitorTracking'
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -51,6 +55,10 @@ function App() {
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/blog" element={<BlogList />} />
+                <Route path="/blog/best-competitive-intelligence-tools-2026" element={<BestCITools2026 />} />
+                <Route path="/blog/crayon-vs-klue-vs-wyzelens" element={<CrayonKlueWyzeLens />} />
+                <Route path="/blog/how-to-track-competitors-with-ai" element={<AICompetitorTracking />} />
                 <Route
                   path="/onboarding"
                   element={
