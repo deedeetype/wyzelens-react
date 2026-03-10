@@ -39,11 +39,11 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Price IDs from Stripe Dashboard (updated Mar 6, 2026)
+    // Price IDs from Stripe Dashboard (LIVE - updated Mar 10, 2026)
     const priceIds: Record<string, string> = {
-      starter: 'price_1T8CJm01YX9kum4IVRj02y9d',   // $8/month
-      pro: 'price_1T8CLZ01YX9kum4IXDSg6IZL',       // $20/month
-      business: 'price_1T8CMT01YX9kum4In8GGMGbG',  // $49/month
+      starter: process.env.STRIPE_PRICE_STARTER || 'price_1T9T5w01YX9kum4ITE9KZu7M',   // $8/month
+      pro: process.env.STRIPE_PRICE_PRO || 'price_1T9T6g01YX9kum4IvuUKQBO0',           // $20/month
+      business: process.env.STRIPE_PRICE_BUSINESS || 'price_1T9T7q01YX9kum4Itdj8MBrS', // $49/month
     };
 
     const priceId = priceIds[planId];
