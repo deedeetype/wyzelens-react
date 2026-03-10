@@ -76,8 +76,12 @@ export default function BestCITools2026() {
             <span>by WyzeLens Team</span>
           </div>
 
-          <div className="aspect-video bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mb-12">
-            <Eye className="w-24 h-24 text-slate-700" />
+          <div className="aspect-video rounded-2xl overflow-hidden mb-12">
+            <img 
+              src="/blog-images/best-ci-tools-2026.jpg" 
+              alt="Best Competitive Intelligence Tools 2026"
+              className="w-full h-full object-cover"
+            />
           </div>
 
           {/* Intro */}

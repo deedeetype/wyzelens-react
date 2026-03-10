@@ -99,9 +99,13 @@ export default function BlogList() {
               to={`/blog/${post.slug}`}
               className="group bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden hover:border-indigo-500/50 transition-all"
             >
-              {/* Image placeholder */}
-              <div className="aspect-video bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                <Eye className="w-16 h-16 text-slate-700" />
+              {/* Hero image */}
+              <div className="aspect-video overflow-hidden">
+                <img 
+                  src={post.image}
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               <div className="p-6">
