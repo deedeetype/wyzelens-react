@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <text x="10" y="32" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#E8E8E8">
+    Industry Today
+  </text>
+  <line x1="10" y1="38" x2="180" y2="38" stroke="#606060" stroke-width="1"/>
+</svg>

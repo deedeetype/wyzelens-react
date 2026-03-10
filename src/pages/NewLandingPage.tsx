@@ -744,6 +744,109 @@ export default function NewLandingPage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="py-32 px-4 bg-slate-900/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Trusted by Strategic Leaders
+            </h2>
+            <p className="text-xl text-gray-400">
+              See how teams use WyzeLens to stay ahead
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "WyzeLens gave us the early warning we needed when our main competitor started pivoting. We adjusted our strategy 3 months ahead of the market—that's a game-changer.",
+                author: "Sarah Chen",
+                role: "VP Strategy",
+                company: "TechVentures Inc.",
+                avatar: "SC"
+              },
+              {
+                quote: "I used to spend 6+ hours every Monday morning tracking competitors manually. Now WyzeLens does it automatically while I focus on execution. ROI paid for itself in week one.",
+                author: "Marcus Rodriguez",
+                role: "Product Director",
+                company: "InnovateLabs",
+                avatar: "MR"
+              },
+              {
+                quote: "The AI insights are scary good. It flagged a funding round 2 days before TechCrunch reported it. We had our counter-positioning ready before anyone else even knew.",
+                author: "Emily Park",
+                role: "Founder & CEO",
+                company: "NexusAI",
+                avatar: "EP"
+              }
+            ].map((testimonial, i) => (
+              <div key={i} className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 p-8 hover:border-indigo-500/50 transition-all">
+                <div className="mb-6">
+                  <div className="text-indigo-400 text-5xl mb-4">"</div>
+                  <p className="text-gray-300 text-lg leading-relaxed">
+                    {testimonial.quote}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <div className="font-semibold">{testimonial.author}</div>
+                    <div className="text-sm text-gray-400">{testimonial.role}</div>
+                    <div className="text-sm text-indigo-400">{testimonial.company}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Data Sources Section */}
+      <section className="py-32 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Powered by Premium Intelligence Sources
+            </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              Our AI continuously scans thousands of trusted global sources to deliver 
+              comprehensive, real-time competitive intelligence
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
+              {[
+                { name: 'Reuters', file: 'reuters.svg' },
+                { name: 'Bloomberg', file: 'bloomberg.svg' },
+                { name: 'IndustryWeek', file: 'industryweek.svg' },
+                { name: 'Industry Today', file: 'industrytoday.svg' },
+                { name: 'Fast Company', file: 'fastcompany.svg' },
+                { name: 'Business Wire', file: 'businesswire.svg' },
+                { name: 'Business Insider', file: 'businessinsider.svg' },
+                { name: 'TechCrunch', file: 'techcrunch.svg' }
+              ].map((source, i) => (
+                <div key={i} className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity duration-300">
+                  <img 
+                    src={`/logos/${source.file}`} 
+                    alt={source.name}
+                    className="h-12 w-auto"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-12 text-center">
+              <p className="text-slate-500 text-sm">
+                + thousands of industry blogs, forums, social media, and regional news outlets worldwide
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-32 px-4">
         <div className="max-w-4xl mx-auto text-center">
