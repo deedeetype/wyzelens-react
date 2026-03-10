@@ -120,8 +120,7 @@ export default function NewLandingPage() {
             </h1>
             
             <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Real-time competitive intelligence that transforms market noise into strategic advantage. 
-              AI-powered insights, automated monitoring, and predictive analytics—all in one platform.
+            Competitive intelligence used to cost $50K/year and a full-time analyst. Now it takes 45 seconds. WyzeLens uses AI to monitor your industry and competitors 24/7 and deliver the insights that actually matter — pricing shifts, feature launches, positioning changes — straight to your dashboard.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
