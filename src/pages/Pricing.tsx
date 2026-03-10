@@ -59,6 +59,7 @@ export default function Pricing() {
     {
       name: 'Starter',
       price: '$8',
+      originalPrice: '$19',
       period: '/month',
       description: 'For individuals & freelancers',
       features: [
@@ -77,6 +78,7 @@ export default function Pricing() {
     {
       name: 'Pro',
       price: '$20',
+      originalPrice: '$29',
       period: '/month',
       description: 'For growing teams',
       features: [
@@ -97,6 +99,7 @@ export default function Pricing() {
     {
       name: 'Business',
       price: '$49',
+      originalPrice: '$99',
       period: '/month',
       description: 'For established businesses',
       features: [
@@ -266,7 +269,21 @@ export default function Pricing() {
 
               <div className="mb-6">
                 <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-2">
+                
+                {plan.originalPrice && (
+                  <div className="mb-1">
+                    <span className="inline-block bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      🚀 SPECIAL LAUNCH PRICE
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex items-baseline gap-2 mb-2">
+                  {plan.originalPrice && (
+                    <span className="text-2xl text-slate-500 line-through">
+                      {plan.originalPrice}
+                    </span>
+                  )}
                   <span className="text-4xl font-bold">{plan.price}</span>
                   {plan.period && <span className="text-slate-400">{plan.period}</span>}
                 </div>
