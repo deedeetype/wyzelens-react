@@ -22,12 +22,22 @@ export default function SettingsView() {
 
   // Load onboarding data into settings on mount
   useEffect(() => {
+    // ✅ CRITICAL: Only load if we have a valid user ID
+    if (!user?.id) return
+    
+    // ✅ SECURITY: Verify this is the current user's data
+    // Settings context should be scoped to user.id
     if (user?.unsafeMetadata) {
       const meta = user.unsafeMetadata as any
       const onboardingData = meta.onboardingData
       
-      // Load profile data
+      // Only load if onboarding data exists AND settings are empty (first load only)
+      // This prevents overwriting settings with stale data on subsequent renders
+      if (!onboardingData) return
+      
+      // Load profile data (only if current settings are empty)
       if (onboardingData?.companyName && !settings.profile.company) {
+        console.log('[SettingsView] Loading onboarding data for user:', user.id)
         updateProfile({ 
           company: onboardingData.companyName,
           companyUrl: onboardingData.companyUrl || '',
@@ -35,7 +45,7 @@ export default function SettingsView() {
         })
       }
       
-      // Load scan preferences
+      // Load scan preferences (only if defaults are still active)
       if (onboardingData && Object.keys(settings.scanPreferences).length === 3) {
         const newPrefs: any = {}
         
@@ -52,7 +62,7 @@ export default function SettingsView() {
         }
       }
     }
-  }, [user])
+  }, [user?.id]) // ✅ Only re-run when userId changes (not on every user object change)
 
   const showSaved = () => {
     setSaved(true)

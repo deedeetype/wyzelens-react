@@ -180,16 +180,38 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   // Load from localStorage when user is available
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) {
+      // ✅ SECURITY: Reset to defaults when no user
+      setSettings(defaultSettings)
+      setLoaded(false)
+      return
+    }
+    
+    console.log('[SettingsContext] Loading settings for user:', user.id)
     
     try {
       const storageKey = `wyzelens_settings_${user.id}`
       const saved = localStorage.getItem(storageKey)
+      
       if (saved) {
         const parsed = JSON.parse(saved)
-        setSettings({ ...defaultSettings, ...parsed, profile: { ...defaultSettings.profile, ...parsed.profile }, scanPreferences: { ...defaultSettings.scanPreferences, ...parsed.scanPreferences } })
+        console.log('[SettingsContext] Loaded saved settings from localStorage')
+        setSettings({ 
+          ...defaultSettings, 
+          ...parsed, 
+          profile: { ...defaultSettings.profile, ...parsed.profile }, 
+          scanPreferences: { ...defaultSettings.scanPreferences, ...parsed.scanPreferences } 
+        })
+      } else {
+        // ✅ NEW USER: No saved settings, use defaults
+        console.log('[SettingsContext] No saved settings found, using defaults')
+        setSettings(defaultSettings)
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[SettingsContext] Failed to load settings:', e)
+      setSettings(defaultSettings)
+    }
+    
     setLoaded(true)
   }, [user?.id])
 
