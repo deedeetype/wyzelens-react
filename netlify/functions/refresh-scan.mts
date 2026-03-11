@@ -295,7 +295,7 @@ export const handler: Handler = async (event) => {
     
     // Step 3: Fetch existing competitors (for insights/alerts context)
     const competitorsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name`,
+      `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name,is_watchlist`,
       {
         headers: {
           'apikey': SUPABASE_KEY!,
@@ -305,8 +305,16 @@ export const handler: Handler = async (event) => {
     )
     const competitors = await competitorsRes.json()
     const competitorNames = competitors?.map((c: any) => c.name) || []
+    const watchlistCompetitors = competitors?.filter((c: any) => c.is_watchlist).map((c: any) => c.name) || []
     
-    console.log(`[REFRESH] Found ${competitorNames.length} competitors`)
+    console.log(`[REFRESH] Found ${competitorNames.length} competitors (${watchlistCompetitors.length} from watchlist)`)
+    
+    // ✅ WATCHLIST CHANGE DETECTION
+    // Fetch user's current watchlist from settings (localStorage is client-side, so we need to check DB or pass it)
+    // For now, we'll log the existing watchlist competitors
+    if (watchlistCompetitors.length > 0) {
+      console.log(`[REFRESH] Existing watchlist competitors: ${watchlistCompetitors.join(', ')}`)
+    }
     
     // Step 4: Reset is_new flags on ALL existing items
     console.log('[REFRESH] Resetting is_new flags...')
