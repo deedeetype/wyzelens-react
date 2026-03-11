@@ -528,16 +528,51 @@ CRITICAL: You must return ${max} results. Do not return fewer than requested.`
   if (watchlist && watchlist.length > 0) {
     console.log(`[COMPETITORS] Enforcing watchlist priority (${watchlist.length} items)`)
     
-    // Normalize watchlist names (case-insensitive, trim)
-    const normalizedWatchlist = watchlist.map(w => w.toLowerCase().trim())
+    // Helper: Check if watchlist item matches competitor (supports URLs + names)
+    const isWatchlistMatch = (watchlistItem: string, competitor: any): boolean => {
+      const w = watchlistItem.toLowerCase().trim()
+      const cName = (competitor.name || '').toLowerCase()
+      const cDomain = (competitor.domain || '').toLowerCase()
+      
+      // If watchlist item is a URL, compare domains
+      if (w.startsWith('http://') || w.startsWith('https://') || w.includes('.com') || w.includes('.org') || w.includes('.net')) {
+        try {
+          // Extract domain from watchlist URL
+          let watchlistDomain = w.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+          let competitorDomain = cDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+          
+          // Match domains
+          if (watchlistDomain === competitorDomain) {
+            console.log(`[COMPETITORS] URL match: ${watchlistItem} → ${competitor.name} (domain: ${competitorDomain})`)
+            return true
+          }
+          
+          // Also check if domain appears in competitor domain
+          if (competitorDomain.includes(watchlistDomain) || watchlistDomain.includes(competitorDomain)) {
+            console.log(`[COMPETITORS] Partial domain match: ${watchlistItem} → ${competitor.name}`)
+            return true
+          }
+        } catch (e) {
+          // Fallback to name matching if URL parsing fails
+        }
+      }
+      
+      // Fallback: Name-based fuzzy matching
+      if (cName.includes(w) || w.includes(cName)) {
+        console.log(`[COMPETITORS] Name match: ${watchlistItem} → ${competitor.name}`)
+        return true
+      }
+      
+      return false
+    }
     
     // Separate watchlist vs auto-discovered
     const watchlistCompanies = companies.filter(c => 
-      normalizedWatchlist.some(w => c.name.toLowerCase().includes(w) || w.includes(c.name.toLowerCase()))
+      watchlist.some(w => isWatchlistMatch(w, c))
     )
     
     const autoCompanies = companies.filter(c => 
-      !normalizedWatchlist.some(w => c.name.toLowerCase().includes(w) || w.includes(c.name.toLowerCase()))
+      !watchlist.some(w => isWatchlistMatch(w, c))
     )
     
     console.log(`[COMPETITORS] Found ${watchlistCompanies.length}/${watchlist.length} watchlist items in results`)
@@ -545,10 +580,7 @@ CRITICAL: You must return ${max} results. Do not return fewer than requested.`
     
     // Missing watchlist items (Perplexity didn't include them)
     const missingWatchlist = watchlist.filter(w => 
-      !companies.some(c => 
-        c.name.toLowerCase().includes(w.toLowerCase()) || 
-        w.toLowerCase().includes(c.name.toLowerCase())
-      )
+      !companies.some(c => isWatchlistMatch(w, c))
     )
     
     if (missingWatchlist.length > 0) {
