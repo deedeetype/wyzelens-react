@@ -1,0 +1,12 @@
+# WyzeLens - Allow all search engines
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://wyzelens.com/sitemap.xml
+
+# Disallow admin/dashboard for crawlers (auth required anyway)
+User-agent: *
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /admin
