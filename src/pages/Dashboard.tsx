@@ -469,7 +469,7 @@ export default function Dashboard() {
           <Link to="/" className={`flex items-center gap-2 ${sidebarCollapsed ? 'hidden' : ''}`}>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
               <img 
-                src="/logos/WyzeLensLogo.svg" 
+                src="/logos/WyzeLensLogo.png" 
                 alt="WyzeLens" 
                 className="w-full h-full"
               />
@@ -481,7 +481,7 @@ export default function Dashboard() {
           {sidebarCollapsed && (
             <Link to="/" className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
               <img 
-                src="/logos/WyzeLensLogo.svg" 
+                src="/logos/WyzeLensLogo.png" 
                 alt="WyzeLens" 
                 className="w-full h-full"
               />

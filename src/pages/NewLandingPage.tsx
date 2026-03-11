@@ -49,7 +49,7 @@ export default function NewLandingPage() {
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
                 <img 
-                  src="/logos/WyzeLensLogo.svg" 
+                  src="/logos/WyzeLensLogo.png" 
                   alt="WyzeLens" 
                   className="w-full h-full"
                 />
@@ -896,7 +896,7 @@ export default function NewLandingPage() {
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
                   <img 
-                    src="/logos/WyzeLensLogo.svg" 
+                    src="/logos/WyzeLensLogo.png" 
                     alt="WyzeLens" 
                     className="w-full h-full"
                   />
