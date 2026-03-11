@@ -466,11 +466,26 @@ export default function Dashboard() {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
         <div className="p-6 flex items-center justify-between">
-          <Link to="/" className={`text-2xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent ${sidebarCollapsed ? 'hidden' : ''}`}>
-            WyzeLens
+          <Link to="/" className={`flex items-center gap-2 ${sidebarCollapsed ? 'hidden' : ''}`}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
+              <img 
+                src="/logos/WyzeLensLogo.svg" 
+                alt="WyzeLens" 
+                className="w-full h-full"
+              />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+              WyzeLens
+            </span>
           </Link>
           {sidebarCollapsed && (
-            <Link to="/" className="text-xl font-bold text-indigo-400">WL</Link>
+            <Link to="/" className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
+              <img 
+                src="/logos/WyzeLensLogo.svg" 
+                alt="WyzeLens" 
+                className="w-full h-full"
+              />
+            </Link>
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
