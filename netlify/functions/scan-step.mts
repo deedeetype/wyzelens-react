@@ -463,7 +463,12 @@ async function stepInit(industry: string, companyUrl?: string, companyName?: str
 async function stepCompetitors(industry: string, scanId: string, companyUrl?: string, maxCompetitors?: number, regions?: string[], watchlist?: string[], userId?: string) {
   const max = maxCompetitors || 15
   const regionStr = regions && regions.length > 0 && !regions.includes('Global') ? ` Focus on companies operating in: ${regions.join(', ')}.` : ''
-  const watchlistStr = watchlist && watchlist.length > 0 ? `\n\nIMPORTANT: You MUST include these companies in the results: ${watchlist.join(', ')}.` : ''
+  
+  // ✅ WATCHLIST PRIORITY: Emphasize in prompt
+  const watchlistStr = watchlist && watchlist.length > 0 
+    ? `\n\n🎯 CRITICAL REQUIREMENT: You MUST include these companies in your results (top priority): ${watchlist.join(', ')}.\nThese are user-specified competitors and must appear in the final list.` 
+    : ''
+  
   let prompt: string
   
   if (companyUrl) {
@@ -519,7 +524,62 @@ CRITICAL: You must return ${max} results. Do not return fewer than requested.`
     console.warn(`[COMPETITORS] Only received ${companies.length}/${max} competitors. Prompt may need adjustment.`)
   }
   
-  return { companies, count: companies.length }
+  // ✅ WATCHLIST PRIORITY ENFORCEMENT (Post-processing guarantee)
+  if (watchlist && watchlist.length > 0) {
+    console.log(`[COMPETITORS] Enforcing watchlist priority (${watchlist.length} items)`)
+    
+    // Normalize watchlist names (case-insensitive, trim)
+    const normalizedWatchlist = watchlist.map(w => w.toLowerCase().trim())
+    
+    // Separate watchlist vs auto-discovered
+    const watchlistCompanies = companies.filter(c => 
+      normalizedWatchlist.some(w => c.name.toLowerCase().includes(w) || w.includes(c.name.toLowerCase()))
+    )
+    
+    const autoCompanies = companies.filter(c => 
+      !normalizedWatchlist.some(w => c.name.toLowerCase().includes(w) || w.includes(c.name.toLowerCase()))
+    )
+    
+    console.log(`[COMPETITORS] Found ${watchlistCompanies.length}/${watchlist.length} watchlist items in results`)
+    console.log(`[COMPETITORS] Auto-discovered: ${autoCompanies.length}`)
+    
+    // Missing watchlist items (Perplexity didn't include them)
+    const missingWatchlist = watchlist.filter(w => 
+      !companies.some(c => 
+        c.name.toLowerCase().includes(w.toLowerCase()) || 
+        w.toLowerCase().includes(c.name.toLowerCase())
+      )
+    )
+    
+    if (missingWatchlist.length > 0) {
+      console.warn(`[COMPETITORS] Perplexity missed ${missingWatchlist.length} watchlist items:`, missingWatchlist)
+      // Add them manually with placeholder data
+      missingWatchlist.forEach(name => {
+        watchlistCompanies.push({
+          name: name,
+          domain: null,
+          description: 'User-added competitor (manual watchlist)',
+          position: 'Watchlist Item'
+        })
+      })
+    }
+    
+    // Prioritize: watchlist first, then auto-discovered, trim to max
+    const finalCompanies = [
+      ...watchlistCompanies,
+      ...autoCompanies
+    ].slice(0, max)
+    
+    console.log(`[COMPETITORS] Final count: ${finalCompanies.length} (${watchlistCompanies.length} watchlist + ${finalCompanies.length - watchlistCompanies.length} auto)`)
+    
+    return { 
+      companies: finalCompanies, 
+      count: finalCompanies.length,
+      watchlistCount: watchlistCompanies.length 
+    }
+  }
+  
+  return { companies, count: companies.length, watchlistCount: 0 }
 }
 
 // Step 2: Collect news via Perplexity
@@ -744,26 +804,42 @@ async function stepFinalize(
   console.log(`[FINALIZE] Starting for scan ${scanId}`)
   console.log(`[FINALIZE] Data: ${competitors.length} competitors, ${insights.length} insights, ${alerts.length} alerts, ${news.length} news`)
   
+  // ✅ MARK WATCHLIST COMPETITORS: Determine which are from watchlist
+  // Pass watchlist from scan context (will be available via step orchestration)
+  const watchlistNames = competitors
+    .filter((c: any) => c.position === 'Watchlist Item' || c.description?.includes('manual watchlist'))
+    .map((c: any) => c.name.toLowerCase())
+  
   // Write competitors to DB (only if new scan)
   const insertedCompetitors = !isRefresh && competitors.length > 0 ? await supabasePost('competitors',
-    competitors.map((c: any) => ({
-      user_id: actualUserId,
-      scan_id: scanId,
-      name: c.name,
-      domain: c.domain || null,
-      industry: c.industry || industry,
-      threat_score: c.threat_score || 5.0,
-      activity_level: c.activity_level || 'medium',
-      description: c.description || '',
-      employee_count: c.employee_count || null,
-      stock_ticker: c.stock_ticker || null,
-      stock_price: null,
-      stock_currency: null,
-      stock_change_percent: null,
-      sentiment_score: Math.random() * 0.5 + 0.3,
-      last_activity_date: new Date().toISOString()
-    }))
+    competitors.map((c: any) => {
+      // Check if this competitor is from watchlist
+      const isWatchlist = watchlistNames.includes(c.name.toLowerCase()) || 
+                         c.position === 'Watchlist Item' ||
+                         c.description?.includes('manual watchlist')
+      
+      return {
+        user_id: actualUserId,
+        scan_id: scanId,
+        name: c.name,
+        domain: c.domain || null,
+        industry: c.industry || industry,
+        threat_score: c.threat_score || 5.0,
+        activity_level: c.activity_level || 'medium',
+        description: c.description || '',
+        employee_count: c.employee_count || null,
+        stock_ticker: c.stock_ticker || null,
+        stock_price: null,
+        stock_currency: null,
+        stock_change_percent: null,
+        sentiment_score: Math.random() * 0.5 + 0.3,
+        last_activity_date: new Date().toISOString(),
+        is_watchlist: isWatchlist  // ✅ NEW FIELD
+      }
+    })
   ) : []
+  
+  console.log(`[FINALIZE] Inserted ${insertedCompetitors.length} competitors (${insertedCompetitors.filter((c: any) => c.is_watchlist).length} from watchlist)`)
   
   console.log(`[FINALIZE] Inserted ${insertedCompetitors.length} competitors`)
   
