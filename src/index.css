@@ -66,38 +66,27 @@
   --info: #3b82f6;
 }
 
-/* Light Theme Variant: Corporate Minimal (Clean Gray) */
-.light-theme[data-light-variant="minimal"] {
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F5F5F5;
-  --bg-card: #FFFFFF;
-  --bg-card-secondary: #FAFAFA;
-  --bg-input: #FAFAFA;
-  --bg-accent: #E0E7FF;
-  --border-primary: #E5E5E5;
-  --border-secondary: #D4D4D8;
-  --text-primary: #18181B;
-  --text-secondary: #52525B;
-  --text-muted: #A1A1AA;
-  --text-body: #3F3F46;
-  --accent-primary: #4F46E5;
-  --accent-secondary: #6366F1;
-  --success: #16A34A;
-  --warning: #EA580C;
-  --danger: #DC2626;
-  --info: #2563EB;
+/* Light Theme - Single Clean Mode (Inspired by Fintech UIs) */
+.light-theme {
+  --bg-primary: #F8FAFC;        /* Soft blue-gray background */
+  --bg-secondary: #F1F5F9;      /* Slightly darker for sections */
+  --bg-card: #FFFFFF;           /* Pure white cards */
+  --bg-card-secondary: #F8FAFC; /* Subtle card variants */
+  --bg-input: #FFFFFF;          /* White inputs with borders */
+  --bg-accent: #EEF2FF;         /* Indigo accent backgrounds */
+  --border-primary: #E2E8F0;    /* Soft borders */
+  --border-secondary: #CBD5E1;  /* Stronger borders */
+  --text-primary: #0F172A;      /* Near-black headings */
+  --text-secondary: #475569;    /* Gray body text */
+  --text-muted: #94A3B8;        /* Muted secondary text */
+  --text-body: #334155;         /* Readable paragraph text */
+  --accent-primary: #6366F1;    /* Indigo primary action */
+  --accent-secondary: #818CF8;  /* Lighter indigo hover */
+  --success: #10B981;           /* Green success */
+  --warning: #F59E0B;           /* Amber warning */
+  --danger: #EF4444;            /* Red danger */
+  --info: #3B82F6;              /* Blue info */
 }
-
-/* Light Theme Variant: Soft Tech (Blue-Gray) */
-.light-theme[data-light-variant="soft"] {
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F9FAFB;
-  --bg-card: #FFFFFF;
-  --bg-card-secondary: #F3F4F6;
-  --bg-input: #F9FAFB;
-  --bg-accent: #DBEAFE;
-  --border-primary: #E5E7EB;
-  --border-secondary: #D1D5DB;
   --text-primary: #111827;
   --text-secondary: #4B5563;
   --text-muted: #9CA3AF;
@@ -110,26 +99,6 @@
   --info: #3B82F6;
 }
 
-/* Light Theme Variant: Premium Neutral (Warm Beige) */
-.light-theme[data-light-variant="premium"] {
-  --bg-primary: #FDFCFB;
-  --bg-secondary: #F7F6F4;
-  --bg-card: #FFFFFF;
-  --bg-card-secondary: #FAF9F7;
-  --bg-input: #F5F4F1;
-  --bg-accent: #FEF3C7;
-  --border-primary: #E8E6E3;
-  --border-secondary: #D4D2CE;
-  --text-primary: #1A1816;
-  --text-secondary: #57544F;
-  --text-muted: #9B9894;
-  --text-body: #44403C;
-  --accent-primary: #D97706;
-  --accent-secondary: #F59E0B;
-  --success: #15803D;
-  --warning: #EA580C;
-  --danger: #DC2626;
-  --info: #0284C7;
 }
 
 @layer base {

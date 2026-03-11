@@ -21,8 +21,6 @@ export interface ScanPreferences {
 
 export interface AppSettings {
   theme: 'dark' | 'light'
-  lightThemeVariant: 'minimal' | 'soft' | 'premium'
-  darkThemeVariant: 'default' | 'pure' | 'warm'
   language: 'en' | 'fr'
   profile: UserProfile
   scanPreferences: ScanPreferences
@@ -30,8 +28,6 @@ export interface AppSettings {
 
 const defaultSettings: AppSettings = {
   theme: 'dark',
-  lightThemeVariant: 'minimal',
-  darkThemeVariant: 'default',
   language: 'en',
   profile: {
     name: '',  // ✅ Empty by default - will be populated from Clerk user data
@@ -236,18 +232,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (loaded && user?.id) {
       const storageKey = `wyzelens_settings_${user.id}`
       localStorage.setItem(storageKey, JSON.stringify(settings))
-      // Apply theme
+      
+      // Apply theme - simple toggle
       const root = document.documentElement
       root.classList.toggle('light-theme', settings.theme === 'light')
-      
-      // Apply theme variants
-      if (settings.theme === 'light') {
-        root.setAttribute('data-light-variant', settings.lightThemeVariant)
-      } else {
-        root.setAttribute('data-dark-variant', settings.darkThemeVariant)
-      }
     }
-  }, [settings, loaded])
+  }, [settings, loaded, user?.id])
 
   const updateSettings = (partial: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...partial }))
