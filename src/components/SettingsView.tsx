@@ -241,8 +241,6 @@ export default function SettingsView() {
               ))}
             </div>
           </div>
-
-          )}
         </div>
       </div>
 

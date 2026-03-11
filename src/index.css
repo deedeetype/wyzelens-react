@@ -87,19 +87,6 @@
   --danger: #EF4444;            /* Red danger */
   --info: #3B82F6;              /* Blue info */
 }
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --text-muted: #9CA3AF;
-  --text-body: #374151;
-  --accent-primary: #0EA5E9;
-  --accent-secondary: #38BDF8;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --info: #3B82F6;
-}
-
-}
 
 @layer base {
   body {
