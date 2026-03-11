@@ -167,17 +167,18 @@ export default function ProfilesView({ scans, loading, selectedScanId, onSelectS
                   <button
                     onClick={() => onRefreshProfile(scan.id)}
                     className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-1"
-                    title="Refresh with latest data (incremental)"
+                    title="Refresh with latest data"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     Refresh
                   </button>
                 )}
-                {onFullRescan && (
+                {/* Full Rescan button removed - use Refresh instead */}
+                {onDeleteProfile && false && onFullRescan && (
                   <button
                     onClick={() => onFullRescan(scan.id)}
                     className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-1"
-                    title="Full rescan from scratch"
+                    title="Full rescan from scratch (disabled)"
                   >
                     <Search className="w-3.5 h-3.5" />
                     Full Rescan

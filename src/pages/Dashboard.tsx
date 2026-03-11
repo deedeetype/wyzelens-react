@@ -60,8 +60,14 @@ export default function Dashboard() {
     }
   }, [isLoaded, user])
   const [showScanModal, setShowScanModal] = useState(false)
-  const [scanIndustry, setScanIndustry] = useState('auto')
-  const [companyUrl, setCompanyUrl] = useState('')
+  const [scanIndustry, setScanIndustry] = useState(() => {
+    // Initialize with default industry from settings if available
+    return settings.profile.defaultIndustry || 'auto'
+  })
+  const [companyUrl, setCompanyUrl] = useState(() => {
+    // Initialize with company URL from settings if available
+    return settings.profile.companyUrl || ''
+  })
   const [isScanning, setIsScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState('')
   const [scanProgressPercent, setScanProgressPercent] = useState(0)
@@ -731,8 +737,12 @@ export default function Dashboard() {
               <button
                 onClick={() => { 
                   setShowScanModal(true)
-                  setCompanyUrl(settings.profile.companyUrl || '')
-                  setScanIndustry(settings.profile.companyUrl ? 'auto' : (settings.profile.defaultIndustry || 'Financial Services'))
+                  // Reset to settings values when opening modal
+                  const defaultUrl = settings.profile.companyUrl || ''
+                  const defaultInd = settings.profile.defaultIndustry || ''
+                  setCompanyUrl(defaultUrl)
+                  // If we have a URL or no default industry, use auto-detect, otherwise use default industry
+                  setScanIndustry(defaultUrl || !defaultInd ? 'auto' : defaultInd)
                   setScanProgress('')
                 }}
                 disabled={isScanning}
