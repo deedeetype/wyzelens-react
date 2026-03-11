@@ -174,16 +174,6 @@ export default function ProfilesView({ scans, loading, selectedScanId, onSelectS
                   </button>
                 )}
                 {/* Full Rescan button removed - use Refresh instead */}
-                {onDeleteProfile && false && onFullRescan && (
-                  <button
-                    onClick={() => onFullRescan(scan.id)}
-                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-1"
-                    title="Full rescan from scratch (disabled)"
-                  >
-                    <Search className="w-3.5 h-3.5" />
-                    Full Rescan
-                  </button>
-                )}
                 {onDeleteProfile && (
                   <button
                     onClick={() => {
