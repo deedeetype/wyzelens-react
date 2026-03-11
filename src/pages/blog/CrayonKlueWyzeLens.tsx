@@ -25,13 +25,11 @@ export default function CrayonKlueWyzeLens() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3">
-              
-                <img 
-                  src="/logos/WyzeLensLogo.png" 
-                  alt="WyzeLens" 
-                  className="h-10 w-auto"
-                />
-              
+              <img
+                src="/logos/WyzeLensLogo.png"
+                alt="WyzeLens"
+                className="h-10 w-auto"
+              />
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
                 WyzeLens
               </span>
@@ -49,9 +47,9 @@ export default function CrayonKlueWyzeLens() {
               >
                 Get Started
               </Link>
-            
-          
-        
+            </div>
+          </div>
+        </div>
       </nav>
 
       {/* Article Header */}
@@ -62,23 +60,23 @@ export default function CrayonKlueWyzeLens() {
               <ChevronRight className="w-4 h-4 rotate-180" />
               Back to Blog
             </Link>
-          
+          </div>
           
           <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
             Crayon vs Klue vs WyzeLens: Which CI Tool is Right for You?
           </h1>
           
           <div className="flex items-center gap-6 text-sm text-slate-400 mb-8">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-3">
               <Calendar className="w-4 h-4" />
               February 8, 2026
             </span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-3">
               <Clock className="w-4 h-4" />
               10 min read
             </span>
             <span>by WyzeLens Team</span>
-          
+          </div>
 
           <div className="aspect-video rounded-2xl overflow-hidden mb-12">
             <img 
@@ -86,7 +84,7 @@ export default function CrayonKlueWyzeLens() {
               alt="Crayon vs Klue vs WyzeLens Comparison"
               className="w-full h-full object-cover"
             />
-          
+          </div>
 
           {/* Intro */}
           <div className="prose prose-invert prose-lg max-w-none mb-12">
@@ -96,7 +94,7 @@ export default function CrayonKlueWyzeLens() {
             <p className="text-slate-400">
               This head-to-head comparison cuts through the marketing fluff to help you decide which platform fits your team's size, budget, and intelligence needs. We'll cover features, pricing, strengths, weaknesses, and real-world use cases—so you can make a confident choice.
             </p>
-          
+          </div>
 
           {/* Table of Contents */}
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 mb-12">
@@ -123,7 +121,7 @@ export default function CrayonKlueWyzeLens() {
                 </li>
               ))}
             </ul>
-          
+          </div>
 
           {/* Article Content */}
           <article className="prose prose-invert prose-lg max-w-none">
@@ -137,8 +135,8 @@ export default function CrayonKlueWyzeLens() {
                   <p><strong className="text-slate-300">Best for:</strong> <span className="text-slate-400">Large B2B SaaS teams</span></p>
                   <p><strong className="text-slate-300">Starting Price:</strong> <span className="text-slate-400">~$15k/year</span></p>
                   <p><strong className="text-slate-300">Setup Time:</strong> <span className="text-slate-400">2-4 weeks</span></p>
-                
-              
+                </div>
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-3">Klue</h3>
@@ -147,8 +145,8 @@ export default function CrayonKlueWyzeLens() {
                   <p><strong className="text-slate-300">Best for:</strong> <span className="text-slate-400">Sales enablement teams</span></p>
                   <p><strong className="text-slate-300">Starting Price:</strong> <span className="text-slate-400">~$12k/year</span></p>
                   <p><strong className="text-slate-300">Setup Time:</strong> <span className="text-slate-400">1-3 weeks</span></p>
-                
-              
+                </div>
+              </div>
 
               <div className="bg-slate-900/50 border border-indigo-500/30 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-3">WyzeLens</h3>
@@ -157,9 +155,9 @@ export default function CrayonKlueWyzeLens() {
                   <p><strong className="text-slate-300">Best for:</strong> <span className="text-slate-400">Startups, SMBs, agile teams</span></p>
                   <p><strong className="text-slate-300">Starting Price:</strong> <span className="text-slate-400">Free / $8/month</span></p>
                   <p><strong className="text-slate-300">Setup Time:</strong> <span className="text-slate-400">&lt;3 minutes</span></p>
-                
-              
-            
+                </div>
+              </div>
+            </div>
 
             <h2 id="feature-comparison" className="text-3xl font-bold mt-12 mb-6">Feature Comparison</h2>
             
@@ -230,7 +228,7 @@ export default function CrayonKlueWyzeLens() {
                   </tr>
                 </tbody>
               </table>
-            
+            </div>
 
             <h2 id="pricing-breakdown" className="text-3xl font-bold mt-12 mb-6">Pricing Breakdown</h2>
             
@@ -243,7 +241,7 @@ export default function CrayonKlueWyzeLens() {
                 <li>• Implementation fees often apply</li>
                 <li>• Best for teams with 50+ employees</li>
               </ul>
-            
+            </div>
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold mb-4">Klue Pricing</h3>
@@ -254,7 +252,7 @@ export default function CrayonKlueWyzeLens() {
                 <li>• Add-ons for premium integrations</li>
                 <li>• Target: sales teams of 20+</li>
               </ul>
-            
+            </div>
 
             <div className="bg-slate-900/50 border border-indigo-500/30 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold mb-4">WyzeLens Pricing</h3>
@@ -269,7 +267,7 @@ export default function CrayonKlueWyzeLens() {
               <Link to="/pricing" className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm mt-3">
                 View Full Pricing <ArrowRight className="w-3 h-3" />
               </Link>
-            
+            </div>
 
             <h2 id="crayon-deep-dive" className="text-3xl font-bold mt-12 mb-6">Crayon: Deep Dive</h2>
             
@@ -362,7 +360,7 @@ export default function CrayonKlueWyzeLens() {
                 <li>✅ You need battlecards + weekly digests</li>
                 <li>✅ You have resources for 2-4 week onboarding</li>
               </ul>
-            
+            </div>
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold mb-3">Choose Klue if:</h3>
@@ -372,7 +370,7 @@ export default function CrayonKlueWyzeLens() {
                 <li>✅ Budget is $12k+/year</li>
                 <li>✅ Win/loss tracking is critical</li>
               </ul>
-            
+            </div>
 
             <div className="bg-slate-900/50 border border-indigo-500/30 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold mb-3">Choose WyzeLens if:</h3>
@@ -383,7 +381,7 @@ export default function CrayonKlueWyzeLens() {
                 <li>✅ You need to start tracking competitors today</li>
                 <li>✅ You prefer self-serve over sales calls</li>
               </ul>
-            
+            </div>
 
             <h2 id="conclusion" className="text-3xl font-bold mt-12 mb-6">Conclusion</h2>
             <p className="text-slate-300 mb-4">
@@ -409,17 +407,17 @@ export default function CrayonKlueWyzeLens() {
                 Start Free
                 <ArrowRight className="w-5 h-5" />
               </Link>
-            
+            </div>
           </article>
-        
-      
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-slate-800 py-12 px-4">
         <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
           <p>© 2026 Labwyze Inc. All rights reserved.</p>
-        
+        </div>
       </footer>
-    
+    </div>
   )
 }

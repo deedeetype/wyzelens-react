@@ -25,13 +25,11 @@ export default function BestCITools2026() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3">
-              
-                <img 
-                  src="/logos/WyzeLensLogo.png" 
-                  alt="WyzeLens" 
-                  className="h-10 w-auto"
-                />
-              
+              <img
+                src="/logos/WyzeLensLogo.png"
+                alt="WyzeLens"
+                className="h-10 w-auto"
+              />
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
                 WyzeLens
               </span>
@@ -49,9 +47,9 @@ export default function BestCITools2026() {
               >
                 Get Started
               </Link>
-            
-          
-        
+            </div>
+          </div>
+        </div>
       </nav>
 
       {/* Article Header */}
@@ -62,23 +60,23 @@ export default function BestCITools2026() {
               <ChevronRight className="w-4 h-4 rotate-180" />
               Back to Blog
             </Link>
-          
+          </div>
           
           <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
             Best Competitive Intelligence Tools 2026
           </h1>
           
           <div className="flex items-center gap-6 text-sm text-slate-400 mb-8">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-3">
               <Calendar className="w-4 h-4" />
               February 15, 2026
             </span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-3">
               <Clock className="w-4 h-4" />
               8 min read
             </span>
             <span>by WyzeLens Team</span>
-          
+          </div>
 
           <div className="aspect-video rounded-2xl overflow-hidden mb-12">
             <img 
@@ -86,7 +84,7 @@ export default function BestCITools2026() {
               alt="Best Competitive Intelligence Tools 2026"
               className="w-full h-full object-cover"
             />
-          
+          </div>
 
           {/* Intro */}
           <div className="prose prose-invert prose-lg max-w-none mb-12">
@@ -96,7 +94,7 @@ export default function BestCITools2026() {
             <p className="text-slate-400">
               But with dozens of CI platforms claiming to be "the best," how do you choose? This comprehensive guide breaks down the top 10 competitive intelligence tools in 2026, comparing features, pricing, and ideal use cases to help you make an informed decision.
             </p>
-          
+          </div>
 
           {/* Table of Contents */}
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 mb-12">
@@ -121,7 +119,7 @@ export default function BestCITools2026() {
                 </li>
               ))}
             </ul>
-          
+          </div>
 
           {/* Article Content */}
           <article className="prose prose-invert prose-lg max-w-none">
@@ -167,16 +165,16 @@ export default function BestCITools2026() {
                     <li>• Real-time news aggregation</li>
                     <li>• Automated hourly/daily refreshes</li>
                   </ul>
-                
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-300 mb-2">Pricing:</p>
                   <p className="text-slate-400 text-sm">Free plan available. Paid plans start at $8/month.</p>
                   <Link to="/pricing" className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm mt-2">
                     View Pricing <ArrowRight className="w-3 h-3" />
                   </Link>
-                
-              
-            
+                </div>
+              </div>
+            </div>
 
             {/* Tool 2 - Crayon */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
@@ -196,13 +194,13 @@ export default function BestCITools2026() {
                     <li>• Weekly email digests</li>
                     <li>• Salesforce integration</li>
                   </ul>
-                
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-300 mb-2">Pricing:</p>
                   <p className="text-slate-400 text-sm">Custom pricing (typically $15,000+/year)</p>
-                
-              
-            
+                </div>
+              </div>
+            </div>
 
             {/* Tool 3 - Klue */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
@@ -222,13 +220,13 @@ export default function BestCITools2026() {
                     <li>• Win/loss analysis</li>
                     <li>• Slack notifications</li>
                   </ul>
-                
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-300 mb-2">Pricing:</p>
                   <p className="text-slate-400 text-sm">Custom pricing (starts around $12,000/year)</p>
-                
-              
-            
+                </div>
+              </div>
+            </div>
 
             {/* Tools 4-10 (abbreviated for length) */}
             <div className="space-y-6 mb-8">
@@ -236,44 +234,44 @@ export default function BestCITools2026() {
                 <h3 className="text-xl font-bold mb-2">4. Kompyte</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> Real-time website and digital tracking</p>
                 <p className="text-slate-400 text-sm">Automated website change detection, SEO tracking, and social media monitoring. Pricing: ~$500-$2,000/month.</p>
-              
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">5. Contify</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> Market intelligence and M&A tracking</p>
                 <p className="text-slate-400 text-sm">AI-curated news feeds, custom taxonomies, and regulatory tracking. Pricing: Custom (enterprise focus).</p>
-              
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">6. SimilarWeb</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> Traffic and digital analytics</p>
                 <p className="text-slate-400 text-sm">Deep website traffic insights, audience demographics, and referral sources. Pricing: $199-$799/month.</p>
-              
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">7. SpyFu</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> SEO and PPC competitive research</p>
                 <p className="text-slate-400 text-sm">Keyword tracking, ad copy history, and backlink analysis. Pricing: $39-$299/month.</p>
-              
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">8. Owler</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> Company profiles and funding alerts</p>
                 <p className="text-slate-400 text-sm">Crowdsourced company data, funding rounds, and news alerts. Pricing: Free + Pro ($29-$99/month).</p>
-              
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">9. CB Insights</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> Venture capital and startup intelligence</p>
                 <p className="text-slate-400 text-sm">VC funding data, tech trends, and emerging startups. Pricing: Custom (starts ~$30,000/year).</p>
-              
+              </div>
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">10. SEMrush</h3>
                 <p className="text-slate-400 text-sm mb-2"><strong>Best for:</strong> SEO-focused competitive analysis</p>
                 <p className="text-slate-400 text-sm">Keyword gap analysis, backlink audits, and content research. Pricing: $119-$449/month.</p>
-              
-            
+              </div>
+            </div>
 
             <h2 id="comparison-table" className="text-3xl font-bold mt-12 mb-6">Feature Comparison Table</h2>
             <div className="overflow-x-auto mb-8">
@@ -325,7 +323,7 @@ export default function BestCITools2026() {
                   </tr>
                 </tbody>
               </table>
-            
+            </div>
 
             <h2 id="how-to-choose" className="text-3xl font-bold mt-12 mb-6">How to Choose the Right CI Tool</h2>
             <p className="text-slate-300 mb-4">
@@ -339,7 +337,7 @@ export default function BestCITools2026() {
                 <li><strong>Mid-Market:</strong> Kompyte, SimilarWeb (dedicated features, moderate cost)</li>
                 <li><strong>Enterprise:</strong> Crayon, Klue, CB Insights (full service, high touch)</li>
               </ul>
-            
+            </div>
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold mb-3">2. Primary Use Case</h3>
@@ -349,14 +347,14 @@ export default function BestCITools2026() {
                 <li><strong>SEO/marketing:</strong> SEMrush, SpyFu, SimilarWeb</li>
                 <li><strong>VC/M&A intelligence:</strong> CB Insights, Contify</li>
               </ul>
-            
+            </div>
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-6">
               <h3 className="text-xl font-bold mb-3">3. Automation Level</h3>
               <p className="text-slate-400">
                 If you want <strong>minimal manual work</strong> and AI-driven insights, prioritize tools like <strong>WyzeLens</strong> that automate discovery, tracking, and analysis. Legacy tools often require significant manual setup and curation.
               </p>
-            
+            </div>
 
             <h2 id="conclusion" className="text-3xl font-bold mt-12 mb-6">Conclusion</h2>
             <p className="text-slate-300 mb-4">
@@ -379,17 +377,17 @@ export default function BestCITools2026() {
                 Start Free
                 <ArrowRight className="w-5 h-5" />
               </Link>
-            
+            </div>
           </article>
-        
-      
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-slate-800 py-12 px-4">
         <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
           <p>© 2026 Labwyze Inc. All rights reserved.</p>
-        
+        </div>
       </footer>
-    
+    </div>
   )
 }
