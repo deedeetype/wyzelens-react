@@ -34,7 +34,7 @@ const defaultSettings: AppSettings = {
   darkThemeVariant: 'default',
   language: 'en',
   profile: {
-    name: 'David',
+    name: '',  // ✅ Empty by default - will be populated from Clerk user data
     email: '',
     photoUrl: '',
     company: '',
@@ -196,16 +196,32 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (saved) {
         const parsed = JSON.parse(saved)
         console.log('[SettingsContext] Loaded saved settings from localStorage')
+        
+        // ✅ POPULATE NAME/EMAIL from Clerk if not set in saved settings
+        const profileWithClerkData = {
+          ...defaultSettings.profile,
+          ...parsed.profile,
+          name: parsed.profile?.name || user.fullName || user.firstName || '',
+          email: parsed.profile?.email || user.primaryEmailAddress?.emailAddress || '',
+        }
+        
         setSettings({ 
           ...defaultSettings, 
           ...parsed, 
-          profile: { ...defaultSettings.profile, ...parsed.profile }, 
+          profile: profileWithClerkData, 
           scanPreferences: { ...defaultSettings.scanPreferences, ...parsed.scanPreferences } 
         })
       } else {
-        // ✅ NEW USER: No saved settings, use defaults
-        console.log('[SettingsContext] No saved settings found, using defaults')
-        setSettings(defaultSettings)
+        // ✅ NEW USER: No saved settings, populate from Clerk
+        console.log('[SettingsContext] No saved settings found, using defaults + Clerk data')
+        setSettings({
+          ...defaultSettings,
+          profile: {
+            ...defaultSettings.profile,
+            name: user.fullName || user.firstName || '',
+            email: user.primaryEmailAddress?.emailAddress || '',
+          }
+        })
       }
     } catch (e) {
       console.error('[SettingsContext] Failed to load settings:', e)
@@ -213,7 +229,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
     
     setLoaded(true)
-  }, [user?.id])
+  }, [user?.id, user?.fullName, user?.firstName, user?.primaryEmailAddress?.emailAddress])
 
   // Save to localStorage on change (scoped by user)
   useEffect(() => {
