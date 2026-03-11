@@ -71,11 +71,28 @@ export default function SettingsView() {
 
   const addWatchlistItem = () => {
     const item = watchlistInput.trim()
-    if (item && !settings.scanPreferences.watchlist.includes(item)) {
-      updateScanPreferences({ watchlist: [...settings.scanPreferences.watchlist, item] })
-      setWatchlistInput('')
-      showSaved()
+    if (!item) return
+    
+    // ✅ CHECK PLAN LIMIT
+    const maxItems = limits.competitors
+    if (settings.scanPreferences.watchlist.length >= maxItems) {
+      alert(`Your ${plan} plan allows up to ${maxItems} competitors in watchlist. Upgrade for more.`)
+      return
     }
+    
+    // Check for duplicates (case-insensitive)
+    const exists = settings.scanPreferences.watchlist.some(
+      w => w.toLowerCase() === item.toLowerCase()
+    )
+    
+    if (exists) {
+      alert('This competitor is already in your watchlist.')
+      return
+    }
+    
+    updateScanPreferences({ watchlist: [...settings.scanPreferences.watchlist, item] })
+    setWatchlistInput('')
+    showSaved()
   }
 
   const removeWatchlistItem = (item: string) => {
@@ -470,10 +487,17 @@ export default function SettingsView() {
                   PRO Feature
                 </span>
               )}
+              {limits.features.customWatchlist && (
+                <span className="ml-2 text-xs text-slate-500">
+                  {settings.scanPreferences.watchlist.length}/{limits.competitors}
+                </span>
+              )}
             </label>
             <p className="text-xs text-slate-500 mb-3">
               {limits.features.customWatchlist 
-                ? (settings.language === 'fr' ? 'Compagnies à toujours inclure dans les scans' : 'Companies to always include in scans')
+                ? (settings.language === 'fr' 
+                    ? 'Compagnies à toujours inclure dans les scans (priorité maximale)' 
+                    : 'Companies to always include in scans (top priority)')
                 : 'Upgrade to Pro to create a custom watchlist of competitors.'
               }
             </p>
