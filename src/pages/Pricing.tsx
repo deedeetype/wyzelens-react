@@ -203,14 +203,12 @@ export default function Pricing() {
       <nav className="fixed w-full top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
-                <img 
-                  src="/logos/WyzeLensLogo.svg" 
-                  alt="WyzeLens" 
-                  className="w-full h-full"
-                />
-              </div>
+            <Link to="/" className="flex items-center gap-3">
+              <img 
+                src="/logos/WyzeLensLogo.png" 
+                alt="WyzeLens" 
+                className="h-10 w-auto"
+              />
               <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
                 WyzeLens
               </span>

@@ -52,14 +52,12 @@ export default function BlogList() {
       <nav className="fixed w-full top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-1">
-                <img 
-                  src="/logos/WyzeLensLogo.svg" 
-                  alt="WyzeLens" 
-                  className="w-full h-full"
-                />
-              </div>
+            <Link to="/" className="flex items-center gap-3">
+              <img 
+                src="/logos/WyzeLensLogo.png" 
+                alt="WyzeLens" 
+                className="h-10 w-auto"
+              />
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
                 WyzeLens
               </span>
@@ -77,9 +75,9 @@ export default function BlogList() {
               >
                 Get Started
               </Link>
-            </div>
-          </div>
-        </div>
+            
+          
+        
       </nav>
 
       {/* Hero */}
@@ -91,8 +89,8 @@ export default function BlogList() {
           <p className="text-xl text-slate-400">
             Insights on competitive intelligence, AI-powered market tracking, and strategic advantage
           </p>
-        </div>
-      </div>
+        
+      
 
       {/* Blog Posts Grid */}
       <div className="max-w-6xl mx-auto px-4 pb-20">
@@ -110,14 +108,14 @@ export default function BlogList() {
                   alt={post.title}
                   className="w-full h-full object-cover"
                 />
-              </div>
+              
 
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wide">
                     {post.category}
                   </span>
-                </div>
+                
 
                 <h2 className="text-xl font-bold mb-3 group-hover:text-indigo-400 transition">
                   {post.title}
@@ -137,14 +135,14 @@ export default function BlogList() {
                       <Clock className="w-3 h-3" />
                       {post.readTime}
                     </span>
-                  </div>
+                  
                   <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition" />
-                </div>
-              </div>
+                
+              
             </Link>
           ))}
-        </div>
-      </div>
+        
+      
 
       {/* CTA Section */}
       <div className="max-w-4xl mx-auto px-4 pb-32 text-center">
@@ -162,15 +160,15 @@ export default function BlogList() {
             Start Free
             <ArrowRight className="w-5 h-5" />
           </Link>
-        </div>
-      </div>
+        
+      
 
       {/* Footer */}
       <footer className="border-t border-slate-800 py-12 px-4">
         <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
           <p>© 2026 Labwyze Inc. All rights reserved.</p>
-        </div>
+        
       </footer>
-    </div>
+    
   )
 }
