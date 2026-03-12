@@ -443,30 +443,80 @@ export const handler: Handler = async (event) => {
         )
       }
       
-      // Add new watchlist competitors
-      const newCompetitors = addedItems.map(item => ({
-        user_id: userId,
-        scan_id: scanId,
-        name: item.charAt(0).toUpperCase() + item.slice(1), // Capitalize first letter
-        domain: item.includes('.') ? item : null,
-        industry: scan.industry,
-        threat_score: 7.0,
-        activity_level: 'medium',
-        description: 'User-added watchlist competitor',
-        employee_count: null,
-        stock_ticker: null,
-        stock_price: null,
-        stock_currency: null,
-        stock_change_percent: null,
-        sentiment_score: 0.5,
-        last_activity_date: new Date().toISOString(),
-        is_watchlist: true
-      }))
+      // ✅ CHECK IF ADDED ITEMS ALREADY EXIST (as auto-discovered)
+      // Convert existing competitors to watchlist instead of creating duplicates
+      const normalizeForMatch = (str: string): string => {
+        return str.toLowerCase().trim().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+      }
       
-      await supabasePost('competitors', newCompetitors)
+      const itemsToInsert: string[] = []
+      const itemsToConvert: any[] = []
       
-      console.log(`[REFRESH] ✅ Added ${newCompetitors.length} watchlist competitors:`, 
-        newCompetitors.map(c => c.name))
+      for (const item of addedItems) {
+        const normalized = normalizeForMatch(item)
+        
+        // Check if competitor already exists (by name or domain)
+        const existing = currentCompetitors.find((c: any) => {
+          const cName = normalizeForMatch(c.name)
+          const cDomain = normalizeForMatch(c.domain || '')
+          return cName === normalized || cDomain === normalized || 
+                 cName.includes(normalized) || normalized.includes(cName)
+        })
+        
+        if (existing) {
+          console.log(`[REFRESH] Competitor '${item}' already exists as '${existing.name}' (id: ${existing.id}) - converting to watchlist`)
+          itemsToConvert.push(existing)
+        } else {
+          console.log(`[REFRESH] Competitor '${item}' not found - will insert new`)
+          itemsToInsert.push(item)
+        }
+      }
+      
+      // Convert existing competitors to watchlist (UPDATE is_watchlist=TRUE)
+      if (itemsToConvert.length > 0) {
+        const idsToConvert = itemsToConvert.map(c => c.id)
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?id=in.(${idsToConvert.join(',')})`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_watchlist: true })
+          }
+        )
+        console.log(`[REFRESH] ✅ Converted ${itemsToConvert.length} existing competitors to watchlist:`,
+          itemsToConvert.map(c => c.name))
+      }
+      
+      // Insert truly new watchlist competitors
+      if (itemsToInsert.length > 0) {
+        const newCompetitors = itemsToInsert.map(item => ({
+          user_id: userId,
+          scan_id: scanId,
+          name: item.charAt(0).toUpperCase() + item.slice(1), // Capitalize first letter
+          domain: item.includes('.') ? item : null,
+          industry: scan.industry,
+          threat_score: 7.0,
+          activity_level: 'medium',
+          description: 'User-added watchlist competitor',
+          employee_count: null,
+          stock_ticker: null,
+          stock_price: null,
+          stock_currency: null,
+          stock_change_percent: null,
+          sentiment_score: 0.5,
+          last_activity_date: new Date().toISOString(),
+          is_watchlist: true
+        }))
+        
+        await supabasePost('competitors', newCompetitors)
+        
+        console.log(`[REFRESH] ✅ Inserted ${newCompetitors.length} new watchlist competitors:`, 
+          newCompetitors.map(c => c.name))
+      }
     }
     
     // Handle removed watchlist items
