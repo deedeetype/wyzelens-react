@@ -544,7 +544,7 @@ Use current 2026 data.`
                 { role: 'user', content: enrichPrompt }
               ],
               temperature: 0.3,
-              max_tokens: 2000
+              max_tokens: 3500
             })
           })
           
@@ -677,7 +677,7 @@ Use current 2026 data.`
                 { role: 'user', content: backfillPrompt }
               ],
               temperature: 0.4,
-              max_tokens: 2000
+              max_tokens: 3500
             })
           })
           
