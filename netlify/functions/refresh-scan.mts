@@ -491,31 +491,89 @@ export const handler: Handler = async (event) => {
           itemsToConvert.map(c => c.name))
       }
       
-      // Insert truly new watchlist competitors
+      // ✅ INSERT NEW WATCHLIST COMPETITORS (with enrichment via Perplexity)
       if (itemsToInsert.length > 0) {
-        const newCompetitors = itemsToInsert.map(item => ({
-          user_id: userId,
-          scan_id: scanId,
-          name: item.charAt(0).toUpperCase() + item.slice(1), // Capitalize first letter
-          domain: item.includes('.') ? item : null,
-          industry: scan.industry,
-          threat_score: 7.0,
-          activity_level: 'medium',
-          description: 'User-added watchlist competitor',
-          employee_count: null,
-          stock_ticker: null,
-          stock_price: null,
-          stock_currency: null,
-          stock_change_percent: null,
-          sentiment_score: 0.5,
-          last_activity_date: new Date().toISOString(),
-          is_watchlist: true
-        }))
+        console.log(`[REFRESH] Enriching ${itemsToInsert.length} new watchlist items...`)
+        
+        // Build enrichment prompt
+        const enrichPrompt = `Provide detailed company information for these ${itemsToInsert.length} companies in the ${scan.industry} industry:
+
+${itemsToInsert.map((item, i) => `${i+1}. ${item}`).join('\n')}
+
+For EACH company, provide:
+- name (official company name)
+- domain (primary website domain without http, e.g. "tesla.com")
+- description (2-3 sentences: what they do, market position, key differentiators)
+- threat_score (1-10 rating based on market presence, innovation, competitive threat)
+- activity_level (low/medium/high based on recent news/product launches)
+- employee_count (approximate number as integer, or null if unknown)
+- stock_ticker (if publicly traded, e.g. "TSLA", or null if private)
+- position (e.g. "Market Leader", "Emerging Competitor", "Established Player")
+
+Return EXACTLY ${itemsToInsert.length} companies as JSON array.
+
+JSON format: [{"name": "Company", "domain": "example.com", "description": "...", "threat_score": 8.5, "activity_level": "high", "employee_count": 50000, "stock_ticker": "TICK", "position": "Market Leader"}]
+
+Use current 2026 data.`
+
+        let enriched: any[] = []
+        
+        try {
+          const enrichRes = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${PERPLEXITY_KEY}`,
+              'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+              model: 'sonar-pro',
+              messages: [
+                { role: 'system', content: 'Business intelligence analyst. Provide accurate company data. JSON only.' },
+                { role: 'user', content: enrichPrompt }
+              ],
+              temperature: 0.3,
+              max_tokens: 2000
+            })
+          })
+          
+          if (enrichRes.ok) {
+            const enrichData = await enrichRes.json()
+            enriched = parseJsonArray(enrichData.choices[0].message.content)
+            console.log(`[REFRESH] Enriched ${enriched.length}/${itemsToInsert.length} items`)
+          } else {
+            console.warn(`[REFRESH] Enrichment failed (${enrichRes.status}), using fallback`)
+          }
+        } catch (error) {
+          console.error('[REFRESH] Enrichment error:', error)
+        }
+        
+        // Build competitors with enriched data (fallback to minimal if enrichment failed)
+        const newCompetitors = itemsToInsert.map((item, idx) => {
+          const e = enriched[idx] || {}
+          return {
+            user_id: userId,
+            scan_id: scanId,
+            name: e.name || (item.charAt(0).toUpperCase() + item.slice(1)),
+            domain: e.domain || (item.includes('.') ? item : null),
+            industry: scan.industry,
+            threat_score: e.threat_score || 7.0,
+            activity_level: e.activity_level || 'medium',
+            description: e.description || 'User-added watchlist competitor',
+            employee_count: e.employee_count || null,
+            stock_ticker: e.stock_ticker || null,
+            stock_price: null,
+            stock_currency: null,
+            stock_change_percent: null,
+            sentiment_score: 0.5,
+            last_activity_date: new Date().toISOString(),
+            is_watchlist: true
+          }
+        })
         
         await supabasePost('competitors', newCompetitors)
         
         console.log(`[REFRESH] ✅ Inserted ${newCompetitors.length} new watchlist competitors:`, 
-          newCompetitors.map(c => c.name))
+          newCompetitors.map(c => `${c.name} (${c.employee_count || 'unknown'} employees)`))
       }
     }
     
