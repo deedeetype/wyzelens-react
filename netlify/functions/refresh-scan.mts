@@ -5,9 +5,11 @@
  */
 
 import type { Handler } from "@netlify/functions"
+import { enrichWatchlistBatch } from './enrich-watchlist.mts'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+const PERPLEXITY_KEY = process.env.PERPLEXITY_API_KEY
 const PERPLEXITY_KEY = process.env.PERPLEXITY_API_KEY
 const POE_KEY = process.env.POE_API_KEY
 
@@ -491,19 +493,36 @@ export const handler: Handler = async (event) => {
           itemsToConvert.map(c => c.name))
       }
       
-      // Insert truly new watchlist competitors
+      // ✅ INSERT NEW WATCHLIST COMPETITORS (with enrichment)
       if (itemsToInsert.length > 0) {
-        const newCompetitors = itemsToInsert.map(item => ({
+        console.log(`[REFRESH] Enriching ${itemsToInsert.length} new watchlist items...`)
+        
+        // Re-fetch current competitors (after potential removals)
+        const currentNamesRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
+        const currentNames = (await currentNamesRes.json()).map((c: any) => c.name)
+        
+        // Enrich via Perplexity (batch call)
+        const enrichedData = await enrichWatchlistBatch(itemsToInsert, scan.industry, currentNames)
+        
+        const newCompetitors = enrichedData.map((enriched: any, idx: number) => ({
           user_id: userId,
           scan_id: scanId,
-          name: item.charAt(0).toUpperCase() + item.slice(1), // Capitalize first letter
-          domain: item.includes('.') ? item : null,
+          name: enriched.name || (itemsToInsert[idx].charAt(0).toUpperCase() + itemsToInsert[idx].slice(1)),
+          domain: enriched.domain || (itemsToInsert[idx].includes('.') ? itemsToInsert[idx] : null),
           industry: scan.industry,
-          threat_score: 7.0,
-          activity_level: 'medium',
-          description: 'User-added watchlist competitor',
-          employee_count: null,
-          stock_ticker: null,
+          threat_score: enriched.threat_score || 7.0,
+          activity_level: enriched.activity_level || 'medium',
+          description: enriched.description || 'User-added watchlist competitor',
+          employee_count: enriched.employee_count || null,
+          stock_ticker: enriched.stock_ticker || null,
           stock_price: null,
           stock_currency: null,
           stock_change_percent: null,
@@ -514,12 +533,12 @@ export const handler: Handler = async (event) => {
         
         await supabasePost('competitors', newCompetitors)
         
-        console.log(`[REFRESH] ✅ Inserted ${newCompetitors.length} new watchlist competitors:`, 
-          newCompetitors.map(c => c.name))
+        console.log(`[REFRESH] ✅ Inserted ${newCompetitors.length} enriched watchlist competitors:`, 
+          newCompetitors.map(c => `${c.name} (${c.employee_count || 'unknown'} employees)`))
       }
     }
     
-    // Handle removed watchlist items
+    // ✅ HANDLE REMOVED WATCHLIST ITEMS (delete + backfill)
     if (watchlistChanged && removedItems.length > 0) {
       console.log(`[REFRESH] Removing ${removedItems.length} watchlist competitors from scan`)
       
@@ -555,6 +574,104 @@ export const handler: Handler = async (event) => {
           }
         )
         console.log(`[REFRESH] ✅ Removed ${toRemoveIds.length} watchlist competitors`)
+        
+        // ✅ BACKFILL: Re-fetch auto-discovered to maintain total count
+        console.log(`[REFRESH] Backfilling ${toRemoveIds.length} auto-discovered competitors...`)
+        
+        // Re-fetch current competitors after deletion
+        const afterDeleteRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
+        const afterDelete = await afterDeleteRes.json()
+        const existingNames = afterDelete.map((c: any) => c.name)
+        
+        // Fetch new auto-discovered competitors to fill the gap
+        const backfillPrompt = `List EXACTLY ${toRemoveIds.length} companies in the ${scan.industry} industry.
+EXCLUDE these existing competitors: ${existingNames.join(', ')}
+
+For each company provide:
+- name
+- domain (website)
+- description (2-3 sentences)
+- threat_score (1-10)
+- activity_level (low/medium/high)
+- employee_count (integer or null)
+- stock_ticker (if public, or null)
+- position (e.g. "Established Competitor", "Emerging Player")
+
+JSON array: [{name, domain, description, threat_score, activity_level, employee_count, stock_ticker, position}]
+
+CRITICAL: Return EXACTLY ${toRemoveIds.length} results. Use current 2026 data.`
+
+        const backfillRes = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${PERPLEXITY_KEY}`, 
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({
+            model: 'sonar-pro',
+            messages: [
+              { role: 'system', content: 'Business intelligence analyst. Respond with valid JSON only.' },
+              { role: 'user', content: backfillPrompt }
+            ],
+            temperature: 0.4,
+            max_tokens: 2000
+          })
+        })
+        
+        const backfillData = await backfillRes.json()
+        const parseJsonArray = (text: string): any[] => {
+          try {
+            let cleaned = text.trim()
+            if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/```\s*$/, '')
+            else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/```\s*$/, '')
+            if (!cleaned.startsWith('[')) {
+              const match = cleaned.match(/\[[\s\S]*\]/)
+              if (match) cleaned = match[0]
+            }
+            return JSON.parse(cleaned)
+          } catch (e) {
+            console.error('JSON parse error:', e)
+            return []
+          }
+        }
+        
+        const backfillCompanies = parseJsonArray(backfillData.choices[0].message.content)
+        
+        if (backfillCompanies.length > 0) {
+          const backfillCompetitors = backfillCompanies.map((c: any) => ({
+            user_id: userId,
+            scan_id: scanId,
+            name: c.name,
+            domain: c.domain || null,
+            industry: scan.industry,
+            threat_score: c.threat_score || 6.0,
+            activity_level: c.activity_level || 'medium',
+            description: c.description || 'Auto-discovered competitor',
+            employee_count: c.employee_count || null,
+            stock_ticker: c.stock_ticker || null,
+            stock_price: null,
+            stock_currency: null,
+            stock_change_percent: null,
+            sentiment_score: 0.5,
+            last_activity_date: new Date().toISOString(),
+            is_watchlist: false  // ✅ Backfill = auto-discovered
+          }))
+          
+          await supabasePost('competitors', backfillCompetitors)
+          
+          console.log(`[REFRESH] ✅ Backfilled ${backfillCompetitors.length} auto-discovered competitors:`,
+            backfillCompetitors.map(c => c.name))
+        } else {
+          console.warn(`[REFRESH] Backfill returned 0 competitors`)
+        }
       }
     }
     
