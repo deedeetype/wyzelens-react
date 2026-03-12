@@ -613,6 +613,100 @@ Use current 2026 data.`
           }
         )
         console.log(`[REFRESH] ✅ Removed ${toRemoveIds.length} watchlist competitors`)
+        
+        // ✅ BACKFILL: Re-fetch auto-discovered to maintain total count
+        const spaceFree = toRemoveIds.length
+        console.log(`[REFRESH] Backfilling ${spaceFree} auto-discovered competitors...`)
+        
+        // Fetch current competitor names (after deletion)
+        const afterDeleteRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
+        const afterDelete = await afterDeleteRes.json()
+        const existingNames = afterDelete.map((c: any) => c.name)
+        
+        // Build backfill prompt
+        const backfillPrompt = `List EXACTLY ${spaceFree} companies in the ${scan.industry} industry.
+EXCLUDE these existing competitors: ${existingNames.join(', ')}
+
+For each company provide:
+- name (official company name)
+- domain (primary website without http)
+- description (2-3 sentences)
+- threat_score (1-10 rating)
+- activity_level (low/medium/high)
+- employee_count (integer or null)
+- stock_ticker (if public, or null)
+- position (e.g. "Established Competitor", "Emerging Player")
+
+Return EXACTLY ${spaceFree} companies as JSON array.
+
+JSON format: [{"name": "Company", "domain": "example.com", "description": "...", "threat_score": 7.5, "activity_level": "medium", "employee_count": 50000, "stock_ticker": "TICK", "position": "Established Competitor"}]
+
+Use current 2026 data.`
+
+        try {
+          const backfillRes = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${PERPLEXITY_KEY}`,
+              'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+              model: 'sonar-pro',
+              messages: [
+                { role: 'system', content: 'Business intelligence analyst. Respond with valid JSON only.' },
+                { role: 'user', content: backfillPrompt }
+              ],
+              temperature: 0.4,
+              max_tokens: 2000
+            })
+          })
+          
+          if (backfillRes.ok) {
+            const backfillData = await backfillRes.json()
+            const backfillCompanies = parseJsonArray(backfillData.choices[0].message.content)
+            
+            if (backfillCompanies.length > 0) {
+              const backfillCompetitors = backfillCompanies.map((c: any) => ({
+                user_id: userId,
+                scan_id: scanId,
+                name: c.name || 'Unknown',
+                domain: c.domain || null,
+                industry: scan.industry,
+                threat_score: c.threat_score || 6.0,
+                activity_level: c.activity_level || 'medium',
+                description: c.description || 'Auto-discovered competitor',
+                employee_count: c.employee_count || null,
+                stock_ticker: c.stock_ticker || null,
+                stock_price: null,
+                stock_currency: null,
+                stock_change_percent: null,
+                sentiment_score: 0.5,
+                last_activity_date: new Date().toISOString(),
+                is_watchlist: false  // ✅ Backfill = auto-discovered
+              }))
+              
+              await supabasePost('competitors', backfillCompetitors)
+              
+              console.log(`[REFRESH] ✅ Backfilled ${backfillCompetitors.length} auto-discovered competitors:`,
+                backfillCompetitors.map(c => c.name))
+            } else {
+              console.warn(`[REFRESH] Backfill returned 0 competitors`)
+            }
+          } else {
+            console.warn(`[REFRESH] Backfill API failed (${backfillRes.status}), skipping backfill`)
+          }
+        } catch (error) {
+          console.error('[REFRESH] Backfill error:', error)
+          // Continue without backfill (doesn't block refresh)
+        }
       }
     }
     
