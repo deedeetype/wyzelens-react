@@ -414,35 +414,6 @@ export const handler: Handler = async (event) => {
       const autoDiscovered = currentCompetitors.filter((c: any) => !c.is_watchlist)
       const max = maxCompetitors || 10
       
-      // Calculate how many to remove
-      const totalAfterAdd = currentCompetitors.length + addedItems.length
-      const toRemove = Math.max(0, totalAfterAdd - max)
-      
-      console.log(`[REFRESH] Current: ${currentCompetitors.length}, Adding: ${addedItems.length}, Max: ${max}, To remove: ${toRemove}`)
-      
-      // Remove lowest-score auto-discovered
-      if (toRemove > 0 && autoDiscovered.length > 0) {
-        const competitorsToRemove = autoDiscovered
-          .sort((a: any, b: any) => a.threat_score - b.threat_score)
-          .slice(0, Math.min(toRemove, autoDiscovered.length))
-        
-        const idsToRemove = competitorsToRemove.map((c: any) => c.id)
-        
-        console.log(`[REFRESH] Removing ${competitorsToRemove.length} low-score competitors:`, 
-          competitorsToRemove.map((c: any) => `${c.name} (${c.threat_score})`))
-        
-        await fetch(
-          `${SUPABASE_URL}/rest/v1/competitors?id=in.(${idsToRemove.join(',')})`,
-          {
-            method: 'DELETE',
-            headers: {
-              'apikey': SUPABASE_KEY!,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-            }
-          }
-        )
-      }
-      
       // ✅ CHECK IF ADDED ITEMS ALREADY EXIST (as auto-discovered)
       // Convert existing competitors to watchlist instead of creating duplicates
       const normalizeForMatch = (str: string): string => {
@@ -470,6 +441,35 @@ export const handler: Handler = async (event) => {
           console.log(`[REFRESH] Competitor '${item}' not found - will insert new`)
           itemsToInsert.push(item)
         }
+      }
+      
+      // ✅ FIX: Calculate space needed for TRUE insertions only (conversions don't need space!)
+      const totalAfterInsert = currentCompetitors.length + itemsToInsert.length
+      const toRemove = Math.max(0, totalAfterInsert - max)
+      
+      console.log(`[REFRESH] Current: ${currentCompetitors.length}, Converting: ${itemsToConvert.length}, Inserting: ${itemsToInsert.length}, Max: ${max}, To remove: ${toRemove}`)
+      
+      // Remove lowest-score auto-discovered (only if needed for NEW insertions)
+      if (toRemove > 0 && autoDiscovered.length > 0) {
+        const competitorsToRemove = autoDiscovered
+          .sort((a: any, b: any) => a.threat_score - b.threat_score)
+          .slice(0, Math.min(toRemove, autoDiscovered.length))
+        
+        const idsToRemove = competitorsToRemove.map((c: any) => c.id)
+        
+        console.log(`[REFRESH] Removing ${competitorsToRemove.length} low-score competitors:`, 
+          competitorsToRemove.map((c: any) => `${c.name} (${c.threat_score})`))
+        
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?id=in.(${idsToRemove.join(',')})`,
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
       }
       
       // Convert existing competitors to watchlist (UPDATE is_watchlist=TRUE)
