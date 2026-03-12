@@ -27,10 +27,11 @@ export const PLANS = {
   },
   starter: {
     name: 'Starter',
-    price: 8,                   // ← Was 15
-    profiles: 3,                // ← Was 1
-    refreshAuto: 'daily',       // Daily auto-refresh
-    refreshManual: 3,           // ← Was 1, per day
+    price: 39,                  // ✅ NEW: $39 launch price (regular $49)
+    originalPrice: 49,          // ✅ Show strikethrough
+    profiles: 3,
+    refreshAuto: 'weekly',      // ✅ NEW: Weekly (was daily)
+    refreshManual: 3,
     competitors: 10,
     historyDays: 30,
     features: {
@@ -38,44 +39,46 @@ export const PLANS = {
       emailAlerts: false,
       weeklyDigest: false,
       slackWebhook: false,
-      customWatchlist: false,   // ← STARTER cannot use watchlist
-      regionalFilter: false,    // ← NEW: STARTER cannot use regional filter
+      customWatchlist: false,
+      regionalFilter: false,
       apiAccess: false
     }
   },
   pro: {
     name: 'Professional',
-    price: 20,                  // ← Was 49
-    profiles: 5,                // ← Was 3
-    refreshAuto: 'hourly',      // ← Was daily, now hourly
-    refreshManual: 999,         // Unlimited
-    competitors: 15,            // ← Was 30
+    price: 79,                  // ✅ NEW: $79 launch price (regular $99)
+    originalPrice: 99,          // ✅ Show strikethrough
+    profiles: 5,
+    refreshAuto: 'daily',       // ✅ NEW: Daily (was hourly)
+    refreshManual: 6,           // ✅ NEW: 6/day cap (was unlimited)
+    competitors: 15,
     historyDays: 90,
     features: {
       export: true,
       emailAlerts: true,
       weeklyDigest: false,
       slackWebhook: false,
-      customWatchlist: true,    // ← PRO can use watchlist
-      regionalFilter: true,     // ← NEW: PRO can use regional filter
+      customWatchlist: true,
+      regionalFilter: true,
       apiAccess: false
     }
   },
   business: {
     name: 'Business',
-    price: 49,                  // ← Was 99
+    price: 119,                 // ✅ NEW: $119 launch price (regular $149)
+    originalPrice: 149,         // ✅ Show strikethrough
     profiles: 10,
-    refreshAuto: 'hourly',      // ← Was daily, now hourly
-    refreshManual: 999,         // Unlimited
-    competitors: 999,           // ← Was 100, now unlimited
-    historyDays: 999999,        // Unlimited
+    refreshAuto: '6h',          // ✅ NEW: Every 6h (was hourly)
+    refreshManual: 12,          // ✅ NEW: 12/day cap (was unlimited)
+    competitors: 20,            // ✅ NEW: 20 max (was unlimited)
+    historyDays: 999999,
     features: {
       export: true,
       emailAlerts: true,
       weeklyDigest: true,
       slackWebhook: true,
-      customWatchlist: true,    // ← BUSINESS can use watchlist
-      regionalFilter: true,     // ← NEW: BUSINESS can use regional filter
+      customWatchlist: true,
+      regionalFilter: true,
       apiAccess: false
     }
   },

@@ -120,8 +120,8 @@ async function validateRefreshLimits(userId: string, scanId: string, isScheduled
   const dailyLimits: Record<string, number> = {
     free: 1,
     starter: 3,
-    pro: 999,
-    business: 999,
+    pro: 6,        // ✅ NEW (was unlimited)
+    business: 12,  // ✅ NEW (was unlimited)
     enterprise: 999
   }
   

@@ -347,12 +347,11 @@ export default function SettingsView() {
                 { value: 5, badge: null },
                 { value: 10, badge: 'STARTER' },
                 { value: 15, badge: 'PRO' },
-                { value: 999, label: 'Unlimited', badge: 'BUSINESS' }
+                { value: 20, label: '20', badge: 'BUSINESS' }
               ].map(opt => {
+                // ✅ Handle exact value matching (no 999 unlimited anymore)
+                const isSelected = settings.scanPreferences.maxCompetitors === opt.value
                 const isLocked = opt.value > limits.competitors
-                const isSelected = opt.value === 999 
-                  ? settings.scanPreferences.maxCompetitors >= 999 
-                  : settings.scanPreferences.maxCompetitors === opt.value
                 
                 return (
                   <button
