@@ -22,15 +22,27 @@ const CORS = {
 
 function parseJsonArray(text: string) {
   try {
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
-    const match = cleaned.match(/\[[\s\S]*\]/)
-    if (match) {
-      const fixed = match[0].replace(/,(\s*[}\]])/g, '$1')
-      return JSON.parse(fixed)
+    let cleaned = text.trim()
+    
+    // Remove markdown code blocks
+    if (cleaned.startsWith('```json')) {
+      cleaned = cleaned.replace(/^```json\s*/, '').replace(/```\s*$/, '')
+    } else if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```\s*/, '').replace(/```\s*$/, '')
     }
+    
+    // Extract JSON array (handle text before/after)
+    const match = cleaned.match(/\[[\s\S]*\]/);
+    if (match) {
+      cleaned = match[0]
+    }
+    
+    // Fix trailing commas
+    cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1')
+    
     return JSON.parse(cleaned)
   } catch (e) {
-    console.error('JSON parse error:', e, 'Raw text:', text.slice(0, 200))
+    console.error('JSON parse error:', e, 'Raw text:', text.slice(0, 300))
     return []
   }
 }
