@@ -257,7 +257,7 @@ export const handler: Handler = async (event) => {
   }
   
   try {
-    const { scanId, userId, triggeredBy } = JSON.parse(event.body || '{}')
+    const { scanId, userId, triggeredBy, watchlist, maxCompetitors } = JSON.parse(event.body || '{}')
     
     console.log(`[REFRESH] Starting refresh for scan ${scanId}, triggered by: ${triggeredBy}`)
     
@@ -270,6 +270,13 @@ export const handler: Handler = async (event) => {
     }
     
     const isScheduled = triggeredBy === 'scheduled'
+    
+    // ✅ LOG WATCHLIST PARAMETER
+    if (watchlist && watchlist.length > 0) {
+      console.log(`[REFRESH] Watchlist provided: ${watchlist.length} items - ${watchlist.join(', ')}`)
+    } else {
+      console.log(`[REFRESH] No watchlist provided`)
+    }
     
     // Step 1: Validate limits (skip if scheduled)
     await validateRefreshLimits(userId, scanId, isScheduled)
@@ -310,10 +317,45 @@ export const handler: Handler = async (event) => {
     console.log(`[REFRESH] Found ${competitorNames.length} competitors (${watchlistCompetitors.length} from watchlist)`)
     
     // ✅ WATCHLIST CHANGE DETECTION
-    // Fetch user's current watchlist from settings (localStorage is client-side, so we need to check DB or pass it)
-    // For now, we'll log the existing watchlist competitors
     if (watchlistCompetitors.length > 0) {
       console.log(`[REFRESH] Existing watchlist competitors: ${watchlistCompetitors.join(', ')}`)
+    }
+    
+    // ✅ CHECK IF WATCHLIST CHANGED
+    let watchlistChanged = false
+    let addedItems: string[] = []
+    let removedItems: string[] = []
+    
+    if (watchlist && watchlist.length > 0) {
+      // Normalize for comparison (case-insensitive, URL-aware)
+      const normalizeItem = (item: string): string => {
+        const lower = item.toLowerCase().trim()
+        // Extract domain from URL if needed
+        if (lower.startsWith('http://') || lower.startsWith('https://') || lower.includes('.com')) {
+          try {
+            return lower.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+          } catch (e) {
+            return lower
+          }
+        }
+        return lower
+      }
+      
+      const currentWatchlistNormalized = watchlistCompetitors.map(normalizeItem)
+      const newWatchlistNormalized = watchlist.map(normalizeItem)
+      
+      // Find added and removed items
+      addedItems = newWatchlistNormalized.filter(w => !currentWatchlistNormalized.includes(w))
+      removedItems = currentWatchlistNormalized.filter(w => !newWatchlistNormalized.includes(w))
+      watchlistChanged = addedItems.length > 0 || removedItems.length > 0
+      
+      if (watchlistChanged) {
+        console.log(`[REFRESH] ✨ Watchlist changed detected!`)
+        console.log(`[REFRESH] Added: ${addedItems.length} items - ${addedItems.join(', ')}`)
+        console.log(`[REFRESH] Removed: ${removedItems.length} items - ${removedItems.join(', ')}`)
+      } else {
+        console.log(`[REFRESH] Watchlist unchanged - no competitor updates needed`)
+      }
     }
     
     // Step 4: Reset is_new flags on ALL existing items
@@ -352,6 +394,119 @@ export const handler: Handler = async (event) => {
     ])
     
     console.log('[REFRESH] Flags reset complete')
+    
+    // Step 4.5: Update competitors if watchlist changed
+    if (watchlistChanged && addedItems.length > 0) {
+      console.log(`[REFRESH] Updating competitors list...`)
+      
+      // Fetch current competitors with scores
+      const currentCompetitorsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=*&order=threat_score.asc`,
+        {
+          headers: {
+            'apikey': SUPABASE_KEY!,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          }
+        }
+      )
+      const currentCompetitors = await currentCompetitorsRes.json()
+      
+      const autoDiscovered = currentCompetitors.filter((c: any) => !c.is_watchlist)
+      const max = maxCompetitors || 10
+      
+      // Calculate how many to remove
+      const totalAfterAdd = currentCompetitors.length + addedItems.length
+      const toRemove = Math.max(0, totalAfterAdd - max)
+      
+      console.log(`[REFRESH] Current: ${currentCompetitors.length}, Adding: ${addedItems.length}, Max: ${max}, To remove: ${toRemove}`)
+      
+      // Remove lowest-score auto-discovered
+      if (toRemove > 0 && autoDiscovered.length > 0) {
+        const competitorsToRemove = autoDiscovered
+          .sort((a: any, b: any) => a.threat_score - b.threat_score)
+          .slice(0, Math.min(toRemove, autoDiscovered.length))
+        
+        const idsToRemove = competitorsToRemove.map((c: any) => c.id)
+        
+        console.log(`[REFRESH] Removing ${competitorsToRemove.length} low-score competitors:`, 
+          competitorsToRemove.map((c: any) => `${c.name} (${c.threat_score})`))
+        
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?id=in.(${idsToRemove.join(',')})`,
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
+      }
+      
+      // Add new watchlist competitors
+      const newCompetitors = addedItems.map(item => ({
+        user_id: userId,
+        scan_id: scanId,
+        name: item.charAt(0).toUpperCase() + item.slice(1), // Capitalize first letter
+        domain: item.includes('.') ? item : null,
+        industry: scan.industry,
+        threat_score: 7.0,
+        activity_level: 'medium',
+        description: 'User-added watchlist competitor',
+        employee_count: null,
+        stock_ticker: null,
+        stock_price: null,
+        stock_currency: null,
+        stock_change_percent: null,
+        sentiment_score: 0.5,
+        last_activity_date: new Date().toISOString(),
+        is_watchlist: true
+      }))
+      
+      await supabasePost('competitors', newCompetitors)
+      
+      console.log(`[REFRESH] ✅ Added ${newCompetitors.length} watchlist competitors:`, 
+        newCompetitors.map(c => c.name))
+    }
+    
+    // Handle removed watchlist items
+    if (watchlistChanged && removedItems.length > 0) {
+      console.log(`[REFRESH] Removing ${removedItems.length} watchlist competitors from scan`)
+      
+      // Delete competitors that are no longer in watchlist
+      const watchlistCompetitorsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&is_watchlist=eq.true&select=id,name`,
+        {
+          headers: {
+            'apikey': SUPABASE_KEY!,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          }
+        }
+      )
+      const watchlistComps = await watchlistCompetitorsRes.json()
+      
+      const normalizeItem = (item: string): string => {
+        return item.toLowerCase().trim().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+      }
+      
+      const toRemoveIds = watchlistComps
+        .filter((c: any) => removedItems.includes(normalizeItem(c.name)))
+        .map((c: any) => c.id)
+      
+      if (toRemoveIds.length > 0) {
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/competitors?id=in.(${toRemoveIds.join(',')})`,
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY!,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          }
+        )
+        console.log(`[REFRESH] ✅ Removed ${toRemoveIds.length} watchlist competitors`)
+      }
+    }
     
     // Step 5: Fetch latest news
     const news = await fetchLatestNews(scan.industry)
