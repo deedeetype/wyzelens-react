@@ -659,7 +659,7 @@ export default function Dashboard() {
                       setScanProgress('🔄 Refreshing intelligence...')
                       setScanProgressPercent(50)
                       
-                      const response = await fetch('/.netlify/functions/refresh-profile', {
+                      const response = await fetch('/.netlify/functions/refresh-scan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
