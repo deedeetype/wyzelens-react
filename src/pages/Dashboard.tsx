@@ -222,7 +222,8 @@ export default function Dashboard() {
         industry, 
         companyUrl: companyUrl || undefined, 
         companyName: companyName || undefined,
-        userId: user?.id // Pass Clerk user ID
+        userId: user?.id, // Pass Clerk user ID
+        isRefresh: false  // ✅ FORCE NEW SCAN (user clicked "New Scan" button, not "Refresh")
       })
       if (scanCancelledRef.current) throw new Error('Scan cancelled')
       scanId = initResult.scanId
