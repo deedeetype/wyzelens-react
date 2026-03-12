@@ -664,7 +664,9 @@ export default function Dashboard() {
                         body: JSON.stringify({
                           scanId,
                           userId: user?.id,
-                          triggeredBy: 'manual'
+                          triggeredBy: 'manual',
+                          watchlist: settings.scanPreferences.watchlist || [],  // ✅ Pass current watchlist
+                          maxCompetitors: settings.scanPreferences.maxCompetitors || 10  // ✅ Pass max limit
                         })
                       })
                       
