@@ -1,146 +1,173 @@
-# 🔖 WyzeLens Restore Points
+# WyzeLens - Restore Points
 
-This file documents safe restore points for the WyzeLens application.
+Stable checkpoints for quick rollback if needed.
 
 ---
 
-## 📌 v1.0.0-production-golive (March 11, 2026)
+## 🏷️ Production Tags
 
-**Status:** 🟢 **PRODUCTION LIVE**
+### **v1.1.0-watchlist-stable** (2026-03-11) ⭐ CURRENT
+**Commit:** `c3f682b`  
+**Features:**
+- ✅ Watchlist priority for competitors (Pro+ feature)
+- ✅ URL/domain matching for watchlist items
+- ✅ SEO optimization (Google rich results)
+- ✅ UI/UX improvements (light theme, settings)
+- ✅ Bug fixes (cross-user isolation, name population)
 
+**Rollback:**
+```bash
+git reset --hard v1.1.0-watchlist-stable
+git push origin main --force
+```
+
+---
+
+### **v1.6.0-pre-watchlist** (2026-03-11)
+**Commit:** `3b9e893`  
+**Features:**
+- ✅ SEO optimization
+- ✅ Light theme cleanup
+- ✅ Full Rescan button removed
+- ✅ Default industry in New Scan modal
+- ❌ NO watchlist feature yet
+
+**Rollback:**
+```bash
+git reset --hard v1.6.0-pre-watchlist
+git push origin main --force
+```
+
+---
+
+### **v1.0.0-stripe-stable** (2026-03-06)
 **Commit:** `117d1b8`  
-**Tag:** `v1.0.0-production-golive`  
-**Domain:** https://wyzelens.com
+**Features:**
+- ✅ Stripe LIVE mode integration
+- ✅ Clerk authentication
+- ✅ Blog articles (3)
+- ✅ Data sources section
+- ✅ Testimonials
 
-### ✅ What's Working:
-
-#### Authentication (Clerk)
-- ✅ Production DNS: `clerk.wyzelens.com`, `accounts.wyzelens.com`
-- ✅ SSL certificates active
-- ✅ JWT Template with custom Supabase signing key
-- ✅ Webhook: `https://wyzelens.com/.netlify/functions/clerk-webhook`
-- ✅ User auto-creation in Supabase
-
-#### Payments (Stripe)
-- ✅ **LIVE mode** active
-- ✅ 3 products: Starter ($8), Pro ($20), Business ($49)
-- ✅ Live Price IDs:
-  - `price_1T9T5w01YX9kum4ITE9KZu7M` (Starter)
-  - `price_1T9T6g01YX9kum4IvuUKQBO0` (Pro)
-  - `price_1T9T7q01YX9kum4Itdj8MBrS` (Business)
-- ✅ Webhook: `https://wyzelens.com/.netlify/functions/stripe-webhook`
-- ✅ Checkout flow functional
-- ✅ Subscriptions tracked in Supabase
-
-#### Database (Supabase)
-- ✅ RLS enabled on all tables
-- ✅ Policies configured for Clerk JWT
-- ✅ JWT Issuer: `https://clerk.wyzelens.com`
-- ✅ Tables: users, scans, competitors, alerts, insights, news_feed, user_subscriptions, refresh_logs
-
-#### Features
-- ✅ Automated hourly/daily refresh (GitHub Actions)
-- ✅ Manual refresh with plan-based limits (Free: 1/day, Starter: 3/day, Pro+: unlimited)
-- ✅ NEW badges (reset each refresh, only on latest items)
-- ✅ Activity Log with counts (0 alerts · 0 insights · 0 news)
-- ✅ Plan feature locks (watchlist, regional filters for Pro+)
-- ✅ History retention (7/30/90/unlimited days - display only)
-
-#### Design
-- ✅ WyzeLens white logo (40px nav, 48px dashboard)
-- ✅ Complete favicon suite (ico, svg, png, apple-touch-icon)
-- ✅ PWA manifest
-- ✅ Responsive mobile design
-
-#### Content
-- ✅ Landing page with testimonials + data sources
-- ✅ 3 SEO-optimized blog articles (1500-2000 words each)
-- ✅ Special launch pricing (strikethrough original prices)
-
-### 🔧 Environment Variables (Production):
-
+**Rollback:**
 ```bash
-# Clerk
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_... (your key)
-CLERK_SECRET_KEY=sk_test_... (your key)
-CLERK_WEBHOOK_SECRET=whsec_... (your key)
-
-# Supabase
-VITE_SUPABASE_URL=https://erkzlqgpbrxokyqtrgnf.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ... (your key)
-SUPABASE_SERVICE_ROLE_KEY=eyJ... (your key)
-
-# Stripe LIVE
-VITE_STRIPE_PUBLISHABLE_KEY=pk_live_... (LIVE)
-STRIPE_SECRET_KEY=sk_live_... (LIVE)
-STRIPE_WEBHOOK_SECRET=whsec_... (LIVE)
-STRIPE_PRICE_STARTER=price_1T9T5w01YX9kum4ITE9KZu7M
-STRIPE_PRICE_PRO=price_1T9T6g01YX9kum4IvuUKQBO0
-STRIPE_PRICE_BUSINESS=price_1T9T7q01YX9kum4Itdj8MBrS
-
-# APIs
-PERPLEXITY_API_KEY=pplx-... (your key)
-POE_API_KEY=... (your key)
-
-# URLs
-VITE_APP_URL=https://wyzelens.com
-URL=https://wyzelens.com
+git reset --hard v1.0.0-stripe-stable
+git push origin main --force
 ```
-
-### 📦 Stack:
-- React 18 + Vite 7.3.1 + TypeScript
-- Tailwind CSS + Lucide Icons
-- Clerk (auth)
-- Supabase (database + RLS)
-- Stripe (payments)
-- Netlify (hosting + functions)
-- Perplexity AI (sonar-pro)
-- Poe API (Claude-Sonnet-4.5)
-
-### 🏷️ To Restore:
-
-```bash
-git checkout v1.0.0-production-golive
-npm install
-npm run build
-# Then redeploy on Netlify or push to main
-```
-
-### 📋 Known Issues/Notes:
-
-- Clerk still in TEST mode (pk_test_...) with custom JWT signing configured
-- Stripe LIVE but may need banking activation depending on jurisdiction
-- Blog hero images are Python-generated gradients (functional but could be replaced with professional photos)
-
-### 🔄 Next Steps (Future):
-
-- [ ] Migrate Clerk to full LIVE mode (pk_live_...)
-- [ ] Complete Stripe banking activation if needed
-- [ ] Add website change tracking (Kompyte-like feature)
-- [ ] Build battlecards feature
-- [ ] CRM integrations (API-based)
-- [ ] Weekly email digest
-- [ ] Slack webhook integration
-- [ ] Export reports (PDF/Excel)
 
 ---
 
-## How to Use This File:
+## 📋 Quick Reference
 
-1. **When making major changes**, create a new restore point:
-   ```bash
-   git tag -a v1.x.x-feature-name -m "Description"
-   git push origin v1.x.x-feature-name
-   ```
-
-2. **Document it here** with:
-   - What works
-   - What changed
-   - How to restore
-   - Known issues
-
-3. **Keep this file updated** in the repo so future you (or collaborators) can quickly restore working states.
+| Tag | Date | Commit | Key Feature | Status |
+|-----|------|--------|-------------|--------|
+| `v1.1.0-watchlist-stable` | 2026-03-11 | `c3f682b` | Watchlist priority | ⭐ Current |
+| `v1.6.0-pre-watchlist` | 2026-03-11 | `3b9e893` | Pre-watchlist stable | ✅ Stable |
+| `v1.0.0-stripe-stable` | 2026-03-06 | `117d1b8` | Stripe payments | ✅ Stable |
 
 ---
 
-*Last updated: March 11, 2026*
+## 🚨 Emergency Rollback
+
+### **Option A: Git Reset (Fastest)**
+```bash
+# Rollback to specific version
+git reset --hard v1.1.0-watchlist-stable  # Or any other tag
+git push origin main --force
+
+# Netlify will auto-deploy the rolled-back version
+```
+
+### **Option B: Netlify UI (No Git)**
+1. Go to: https://app.netlify.com/sites/wyzelens/deploys
+2. Find the deploy you want to restore
+3. Click **"Publish deploy"**
+4. ✅ Instant rollback (30 seconds)
+
+### **Option C: Create Hotfix Branch**
+```bash
+# For urgent fixes without full rollback
+git checkout -b hotfix/issue-name v1.1.0-watchlist-stable
+# Make fix
+git commit -am "hotfix: description"
+git push origin hotfix/issue-name
+# Deploy via Netlify branch deploy
+```
+
+---
+
+## 📝 Creating New Restore Points
+
+### **When to create:**
+- ✅ After major feature deployment
+- ✅ Before risky changes
+- ✅ After successful production validation (24h)
+- ✅ Before merging large PRs
+
+### **How to create:**
+```bash
+# 1. Ensure you're on a stable commit
+git log --oneline -5
+
+# 2. Create annotated tag
+git tag -a v1.X.0-feature-name -m "Release v1.X.0: Feature Description
+
+Features:
+- Feature 1
+- Feature 2
+
+Fixes:
+- Bug fix 1
+
+Deploy date: YYYY-MM-DD" <commit-hash>
+
+# 3. Push to GitHub
+git push origin v1.X.0-feature-name
+
+# 4. Update this file (RESTORE_POINTS.md)
+```
+
+---
+
+## 🔍 Verify Current Version
+
+```bash
+# Check current commit
+git log --oneline -1
+
+# Check current tag
+git describe --tags --abbrev=0
+
+# Compare with tag
+git diff v1.1.0-watchlist-stable HEAD
+```
+
+---
+
+## 📊 Rollback Decision Matrix
+
+| Scenario | Action | Rollback To |
+|----------|--------|-------------|
+| Critical bug in watchlist | Option B (Netlify UI) | Previous deploy |
+| Watchlist causing errors | Option A (Git reset) | `v1.6.0-pre-watchlist` |
+| Total system failure | Option A (Git reset) | `v1.0.0-stripe-stable` |
+| Minor UI issue | Option C (Hotfix branch) | N/A (fix forward) |
+
+---
+
+## ⚠️ Post-Rollback Checklist
+
+```
+[ ] Verify app loads in production
+[ ] Test user login (Clerk)
+[ ] Test scan creation (basic flow)
+[ ] Check database queries (no errors)
+[ ] Verify Stripe checkout (if payments affected)
+[ ] Monitor logs for 30 minutes
+[ ] Update team/users if needed
+```
+
+---
+
+**Last updated:** 2026-03-11  
+**Maintainer:** David Laborieux
