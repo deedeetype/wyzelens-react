@@ -9,152 +9,6 @@ import type { Handler } from "@netlify/functions"
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 const PERPLEXITY_KEY = process.env.PERPLEXITY_API_KEY
-
-// ✅ INLINE: Enrich watchlist items helper (avoid .mts import issues)
-function parseJsonArrayLocal(text: string): any[] {
-  try {
-    let cleaned = text.trim()
-    if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/```\s*$/, '')
-    else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/```\s*$/, '')
-    
-    if (!cleaned.startsWith('[')) {
-      const match = cleaned.match(/\[[\s\S]*\]/)
-      if (match) cleaned = match[0]
-      else {
-        const fixed = '[' + cleaned + ']'
-        return JSON.parse(fixed)
-      }
-    }
-    
-    return JSON.parse(cleaned)
-  } catch (e) {
-    console.error('JSON parse error:', e, 'Raw text:', text.slice(0, 200))
-    return []
-  }
-}
-
-async function enrichWatchlistBatch(
-  items: string[], 
-  industry: string,
-  existingCompetitors: string[] = []
-): Promise<any[]> {
-  
-  if (!items || items.length === 0) {
-    return []
-  }
-  
-  console.log(`[ENRICH-WATCHLIST] Enriching ${items.length} items: ${items.join(', ')}`)
-  
-  const prompt = `Provide detailed company information for these ${items.length} companies in the ${industry} industry:
-
-${items.map((item, i) => `${i+1}. ${item}`).join('\n')}
-
-For EACH company, provide:
-- name (official company name)
-- domain (primary website domain without http, e.g. "tesla.com")
-- description (2-3 sentences: what they do, market position, key differentiators)
-- threat_score (1-10 rating based on market presence, innovation, competitive threat)
-- activity_level (low/medium/high based on recent news/product launches)
-- employee_count (approximate number as integer, or null if unknown)
-- stock_ticker (if publicly traded, e.g. "TSLA", or null if private)
-- position (e.g. "Market Leader", "Emerging Competitor", "Established Player")
-
-Return EXACTLY ${items.length} companies as JSON array. Order doesn't matter but count must match.
-
-JSON format: [{
-  name: "Company Name",
-  domain: "example.com",
-  description: "Brief description...",
-  threat_score: 8.5,
-  activity_level: "high",
-  employee_count: 50000,
-  stock_ticker: "TICK",
-  position: "Market Leader"
-}]
-
-CRITICAL: Return ${items.length} results, one for each input. Use current 2026 data.`
-
-  try {
-    const res = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${PERPLEXITY_KEY}`, 
-        'Content-Type': 'application/json' 
-      },
-      body: JSON.stringify({
-        model: 'sonar-pro',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Business intelligence analyst. Provide accurate, current company data. Respond with valid JSON only. Include all requested fields for each company.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 3000
-      })
-    })
-    
-    if (!res.ok) {
-      console.error(`[ENRICH-WATCHLIST] Perplexity API error: ${res.status}`)
-      return items.map(item => ({
-        name: item.charAt(0).toUpperCase() + item.slice(1),
-        domain: item.includes('.') ? item : null,
-        description: `Competitor in ${industry} industry (user-added watchlist item)`,
-        threat_score: 7.0,
-        activity_level: 'medium',
-        employee_count: null,
-        stock_ticker: null,
-        position: 'Watchlist Item'
-      }))
-    }
-    
-    const data = await res.json()
-    const enriched = parseJsonArrayLocal(data.choices[0].message.content)
-    
-    console.log(`[ENRICH-WATCHLIST] Received ${enriched.length}/${items.length} enriched items`)
-    
-    // Validate we got all items
-    if (enriched.length < items.length) {
-      console.warn(`[ENRICH-WATCHLIST] Missing ${items.length - enriched.length} items, using fallback for missing`)
-      
-      // Fill missing with fallback
-      const enrichedNames = enriched.map((e: any) => e.name?.toLowerCase())
-      const missing = items.filter(item => 
-        !enrichedNames.includes(item.toLowerCase())
-      )
-      
-      const fallbacks = missing.map(item => ({
-        name: item.charAt(0).toUpperCase() + item.slice(1),
-        domain: item.includes('.') ? item : null,
-        description: `Competitor in ${industry} industry`,
-        threat_score: 7.0,
-        activity_level: 'medium',
-        employee_count: null,
-        stock_ticker: null,
-        position: 'Watchlist Item'
-      }))
-      
-      return [...enriched, ...fallbacks]
-    }
-    
-    return enriched
-    
-  } catch (error) {
-    console.error('[ENRICH-WATCHLIST] Error:', error)
-    return items.map(item => ({
-      name: item.charAt(0).toUpperCase() + item.slice(1),
-      domain: item.includes('.') ? item : null,
-      description: `Competitor in ${industry} industry`,
-      threat_score: 7.0,
-      activity_level: 'medium',
-      employee_count: null,
-      stock_ticker: null,
-      position: 'Watchlist Item'
-    }))
-  }
-}
-const PERPLEXITY_KEY = process.env.PERPLEXITY_API_KEY
 const POE_KEY = process.env.POE_API_KEY
 
 const CORS = {
@@ -637,36 +491,19 @@ export const handler: Handler = async (event) => {
           itemsToConvert.map(c => c.name))
       }
       
-      // ✅ INSERT NEW WATCHLIST COMPETITORS (with enrichment)
+      // Insert truly new watchlist competitors
       if (itemsToInsert.length > 0) {
-        console.log(`[REFRESH] Enriching ${itemsToInsert.length} new watchlist items...`)
-        
-        // Re-fetch current competitors (after potential removals)
-        const currentNamesRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name`,
-          {
-            headers: {
-              'apikey': SUPABASE_KEY!,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-            }
-          }
-        )
-        const currentNames = (await currentNamesRes.json()).map((c: any) => c.name)
-        
-        // Enrich via Perplexity (batch call)
-        const enrichedData = await enrichWatchlistBatch(itemsToInsert, scan.industry, currentNames)
-        
-        const newCompetitors = enrichedData.map((enriched: any, idx: number) => ({
+        const newCompetitors = itemsToInsert.map(item => ({
           user_id: userId,
           scan_id: scanId,
-          name: enriched.name || (itemsToInsert[idx].charAt(0).toUpperCase() + itemsToInsert[idx].slice(1)),
-          domain: enriched.domain || (itemsToInsert[idx].includes('.') ? itemsToInsert[idx] : null),
+          name: item.charAt(0).toUpperCase() + item.slice(1), // Capitalize first letter
+          domain: item.includes('.') ? item : null,
           industry: scan.industry,
-          threat_score: enriched.threat_score || 7.0,
-          activity_level: enriched.activity_level || 'medium',
-          description: enriched.description || 'User-added watchlist competitor',
-          employee_count: enriched.employee_count || null,
-          stock_ticker: enriched.stock_ticker || null,
+          threat_score: 7.0,
+          activity_level: 'medium',
+          description: 'User-added watchlist competitor',
+          employee_count: null,
+          stock_ticker: null,
           stock_price: null,
           stock_currency: null,
           stock_change_percent: null,
@@ -677,12 +514,12 @@ export const handler: Handler = async (event) => {
         
         await supabasePost('competitors', newCompetitors)
         
-        console.log(`[REFRESH] ✅ Inserted ${newCompetitors.length} enriched watchlist competitors:`, 
-          newCompetitors.map(c => `${c.name} (${c.employee_count || 'unknown'} employees)`))
+        console.log(`[REFRESH] ✅ Inserted ${newCompetitors.length} new watchlist competitors:`, 
+          newCompetitors.map(c => c.name))
       }
     }
     
-    // ✅ HANDLE REMOVED WATCHLIST ITEMS (delete + backfill)
+    // Handle removed watchlist items
     if (watchlistChanged && removedItems.length > 0) {
       console.log(`[REFRESH] Removing ${removedItems.length} watchlist competitors from scan`)
       
@@ -718,88 +555,6 @@ export const handler: Handler = async (event) => {
           }
         )
         console.log(`[REFRESH] ✅ Removed ${toRemoveIds.length} watchlist competitors`)
-        
-        // ✅ BACKFILL: Re-fetch auto-discovered to maintain total count
-        console.log(`[REFRESH] Backfilling ${toRemoveIds.length} auto-discovered competitors...`)
-        
-        // Re-fetch current competitors after deletion
-        const afterDeleteRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/competitors?scan_id=eq.${scanId}&select=name`,
-          {
-            headers: {
-              'apikey': SUPABASE_KEY!,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-            }
-          }
-        )
-        const afterDelete = await afterDeleteRes.json()
-        const existingNames = afterDelete.map((c: any) => c.name)
-        
-        // Fetch new auto-discovered competitors to fill the gap
-        const backfillPrompt = `List EXACTLY ${toRemoveIds.length} companies in the ${scan.industry} industry.
-EXCLUDE these existing competitors: ${existingNames.join(', ')}
-
-For each company provide:
-- name
-- domain (website)
-- description (2-3 sentences)
-- threat_score (1-10)
-- activity_level (low/medium/high)
-- employee_count (integer or null)
-- stock_ticker (if public, or null)
-- position (e.g. "Established Competitor", "Emerging Player")
-
-JSON array: [{name, domain, description, threat_score, activity_level, employee_count, stock_ticker, position}]
-
-CRITICAL: Return EXACTLY ${toRemoveIds.length} results. Use current 2026 data.`
-
-        const backfillRes = await fetch('https://api.perplexity.ai/chat/completions', {
-          method: 'POST',
-          headers: { 
-            'Authorization': `Bearer ${PERPLEXITY_KEY}`, 
-            'Content-Type': 'application/json' 
-          },
-          body: JSON.stringify({
-            model: 'sonar-pro',
-            messages: [
-              { role: 'system', content: 'Business intelligence analyst. Respond with valid JSON only.' },
-              { role: 'user', content: backfillPrompt }
-            ],
-            temperature: 0.4,
-            max_tokens: 2000
-          })
-        })
-        
-        const backfillData = await backfillRes.json()
-        const backfillCompanies = parseJsonArrayLocal(backfillData.choices[0].message.content)
-        
-        if (backfillCompanies.length > 0) {
-          const backfillCompetitors = backfillCompanies.map((c: any) => ({
-            user_id: userId,
-            scan_id: scanId,
-            name: c.name,
-            domain: c.domain || null,
-            industry: scan.industry,
-            threat_score: c.threat_score || 6.0,
-            activity_level: c.activity_level || 'medium',
-            description: c.description || 'Auto-discovered competitor',
-            employee_count: c.employee_count || null,
-            stock_ticker: c.stock_ticker || null,
-            stock_price: null,
-            stock_currency: null,
-            stock_change_percent: null,
-            sentiment_score: 0.5,
-            last_activity_date: new Date().toISOString(),
-            is_watchlist: false  // ✅ Backfill = auto-discovered
-          }))
-          
-          await supabasePost('competitors', backfillCompetitors)
-          
-          console.log(`[REFRESH] ✅ Backfilled ${backfillCompetitors.length} auto-discovered competitors:`,
-            backfillCompetitors.map(c => c.name))
-        } else {
-          console.warn(`[REFRESH] Backfill returned 0 competitors`)
-        }
       }
     }
     
