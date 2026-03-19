@@ -324,7 +324,13 @@ export async function getSubscriptionInfo(userId: string, token?: string) {
 }
 
 // Check if user's free trial has expired and should be blocked
-export async function checkTrialAccess(userId: string, token?: string): Promise<{
+// For free users: uses Clerk user.createdAt (passed from frontend)
+// For paid users: always has access
+export async function checkTrialAccess(
+  userId: string, 
+  userCreatedAt?: string | number,
+  token?: string
+): Promise<{
   hasAccess: boolean
   trialExpired: boolean
   daysRemaining: number
@@ -333,27 +339,36 @@ export async function checkTrialAccess(userId: string, token?: string): Promise<
   try {
     const supabase = createSupabaseClient(token)
     
+    // Check if user has a paid subscription
     const { data, error } = await supabase
       .from('user_subscriptions')
       .select('plan, status, created_at')
       .eq('user_id', userId)
       .single()
     
-    if (error || !data) {
-      // No subscription record - shouldn't happen but treat as free expired
+    // User has a paid plan in Stripe
+    if (!error && data && data.plan !== 'free') {
+      return { 
+        hasAccess: true, 
+        trialExpired: false, 
+        daysRemaining: 999, 
+        plan: data.plan as PlanName 
+      }
+    }
+    
+    // Free user - check trial based on Clerk createdAt
+    if (!userCreatedAt) {
+      console.warn('[checkTrialAccess] No userCreatedAt provided for free user')
       return { hasAccess: false, trialExpired: true, daysRemaining: 0, plan: 'free' }
     }
     
-    const plan = data.plan as PlanName
+    // Convert Clerk timestamp (milliseconds) to ISO string if needed
+    const createdAtISO = typeof userCreatedAt === 'number' 
+      ? new Date(userCreatedAt).toISOString() 
+      : userCreatedAt
     
-    // Paid plans always have access
-    if (plan !== 'free') {
-      return { hasAccess: true, trialExpired: false, daysRemaining: 999, plan }
-    }
-    
-    // Free plan - check trial expiration
-    const expired = isTrialExpired(data.created_at)
-    const daysRemaining = getTrialDaysRemaining(data.created_at)
+    const expired = isTrialExpired(createdAtISO)
+    const daysRemaining = getTrialDaysRemaining(createdAtISO)
     
     return {
       hasAccess: !expired,

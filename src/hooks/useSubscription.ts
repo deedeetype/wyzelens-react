@@ -21,9 +21,11 @@ export function useSubscription() {
         const userPlan = await getUserPlan(user.id)
         setPlan(userPlan)
         
-        // Check trial status for free users
+        // Check trial status for free users using Clerk createdAt
         if (userPlan === 'free') {
-          const trialStatus = await checkTrialAccess(user.id)
+          // Clerk provides createdAt as Date object - convert to timestamp
+          const userCreatedAt = user.createdAt ? user.createdAt.getTime() : Date.now()
+          const trialStatus = await checkTrialAccess(user.id, userCreatedAt)
           setTrialExpired(trialStatus.trialExpired)
           setTrialDaysRemaining(trialStatus.daysRemaining)
         }
@@ -36,7 +38,7 @@ export function useSubscription() {
     }
 
     loadPlan()
-  }, [user?.id])
+  }, [user?.id, user?.createdAt])
 
   const limits = getPlanLimits(plan)
 
