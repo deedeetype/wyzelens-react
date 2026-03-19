@@ -48,15 +48,17 @@ export default function UpgradeModal({ isOpen, onClose, reason, feature }: Upgra
           <PlanCard
             icon={<Zap className="w-5 h-5" />}
             name="Starter"
-            price="$8"
-            features={['3 industry profiles', 'Daily automated refresh', '3 manual refreshes/day', '10 competitors per scan']}
+            price="$39"
+            originalPrice="$49"
+            features={['3 industry profiles', 'Weekly automated refresh', '3 manual refreshes/day', '10 competitors per scan']}
             highlighted={false}
           />
           <PlanCard
             icon={<Rocket className="w-5 h-5" />}
             name="Professional"
-            price="$20"
-            features={['5 industry profiles', 'Hourly automated refresh', 'Unlimited manual refreshes', 'Watchlist & regional filters']}
+            price="$79"
+            originalPrice="$99"
+            features={['5 industry profiles', 'Daily automated refresh', '6 manual refreshes/day', 'Watchlist & regional filters']}
             highlighted={true}
           />
         </div>
@@ -87,7 +89,7 @@ export default function UpgradeModal({ isOpen, onClose, reason, feature }: Upgra
   )
 }
 
-function PlanCard({ icon, name, price, features, highlighted }: any) {
+function PlanCard({ icon, name, price, originalPrice, features, highlighted }: any) {
   return (
     <div
       className={`p-4 rounded-lg border ${
@@ -101,7 +103,10 @@ function PlanCard({ icon, name, price, features, highlighted }: any) {
           <div className={highlighted ? 'text-indigo-400' : 'text-slate-400'}>{icon}</div>
           <div>
             <div className="font-semibold text-white">{name}</div>
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-400 flex items-center gap-2">
+              {originalPrice && (
+                <span className="line-through text-slate-600 text-xs">{originalPrice}</span>
+              )}
               {price}<span className="text-xs">/month</span>
             </div>
           </div>
