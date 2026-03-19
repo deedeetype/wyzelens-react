@@ -599,6 +599,21 @@ export default function Dashboard() {
         >
           <Menu className="w-6 h-6" />
         </button>
+
+        {/* Trial Expired Overlay - Blocks entire dashboard */}
+        {isFreePlan && trialExpired && (
+          <TrialExpiredOverlay onUpgrade={() => setShowUpgradeModal(true)} />
+        )}
+
+        {/* Trial Banner - Warning for free users */}
+        {isFreePlan && !trialExpired && (
+          <TrialBanner 
+            trialExpired={false}
+            daysRemaining={trialDaysRemaining}
+            onUpgrade={() => setShowUpgradeModal(true)}
+          />
+        )}
+
         {/* Header */}
         <div className="mb-8 mt-12 md:mt-0">
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -1217,20 +1232,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Trial Expired Overlay - Blocks entire dashboard */}
-      {isFreePlan && trialExpired && (
-        <TrialExpiredOverlay onUpgrade={() => setShowUpgradeModal(true)} />
-      )}
-
-      {/* Trial Banner - Warning for free users */}
-      {isFreePlan && !trialExpired && (
-        <TrialBanner 
-          trialExpired={false}
-          daysRemaining={trialDaysRemaining}
-          onUpgrade={() => setShowUpgradeModal(true)}
-        />
       )}
 
       {/* Upgrade Modal */}
