@@ -104,6 +104,25 @@ export const PLANS = {
 
 export type PlanName = keyof typeof PLANS
 
+// Check if free trial has expired (7 days)
+export function isTrialExpired(createdAt: string): boolean {
+  const TRIAL_DAYS = 7
+  const created = new Date(createdAt)
+  const now = new Date()
+  const daysSinceCreation = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+  return daysSinceCreation > TRIAL_DAYS
+}
+
+// Get days remaining in trial
+export function getTrialDaysRemaining(createdAt: string): number {
+  const TRIAL_DAYS = 7
+  const created = new Date(createdAt)
+  const now = new Date()
+  const daysSinceCreation = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+  const daysRemaining = Math.max(0, Math.ceil(TRIAL_DAYS - daysSinceCreation))
+  return daysRemaining
+}
+
 // Get user's current plan
 export async function getUserPlan(userId: string, token?: string): Promise<PlanName> {
   try {
@@ -111,7 +130,7 @@ export async function getUserPlan(userId: string, token?: string): Promise<PlanN
     
     const { data, error } = await supabase
       .from('user_subscriptions')
-      .select('plan, status')
+      .select('plan, status, created_at')
       .eq('user_id', userId)
       .single()
     
@@ -301,5 +320,49 @@ export async function getSubscriptionInfo(userId: string, token?: string) {
   } catch (error) {
     console.error('Error getting subscription info:', error)
     return null
+  }
+}
+
+// Check if user's free trial has expired and should be blocked
+export async function checkTrialAccess(userId: string, token?: string): Promise<{
+  hasAccess: boolean
+  trialExpired: boolean
+  daysRemaining: number
+  plan: PlanName
+}> {
+  try {
+    const supabase = createSupabaseClient(token)
+    
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select('plan, status, created_at')
+      .eq('user_id', userId)
+      .single()
+    
+    if (error || !data) {
+      // No subscription record - shouldn't happen but treat as free expired
+      return { hasAccess: false, trialExpired: true, daysRemaining: 0, plan: 'free' }
+    }
+    
+    const plan = data.plan as PlanName
+    
+    // Paid plans always have access
+    if (plan !== 'free') {
+      return { hasAccess: true, trialExpired: false, daysRemaining: 999, plan }
+    }
+    
+    // Free plan - check trial expiration
+    const expired = isTrialExpired(data.created_at)
+    const daysRemaining = getTrialDaysRemaining(data.created_at)
+    
+    return {
+      hasAccess: !expired,
+      trialExpired: expired,
+      daysRemaining,
+      plan: 'free'
+    }
+  } catch (error) {
+    console.error('Error checking trial access:', error)
+    return { hasAccess: false, trialExpired: true, daysRemaining: 0, plan: 'free' }
   }
 }

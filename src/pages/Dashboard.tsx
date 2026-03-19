@@ -42,13 +42,15 @@ import {
 import ActivityView from '@/components/ActivityView'
 import PlanBadge from '@/components/PlanBadge'
 import UpgradeModal from '@/components/UpgradeModal'
+import TrialBanner from '@/components/TrialBanner'
+import TrialExpiredOverlay from '@/components/TrialExpiredOverlay'
 import { useSubscription } from '@/hooks/useSubscription'
 
 export default function Dashboard() {
   const { user, isLoaded } = useUser()
   const { getToken } = useAuth()
   const { settings, t } = useSettings()
-  const { plan, isFreePlan } = useSubscription()
+  const { plan, isFreePlan, trialExpired, trialDaysRemaining } = useSubscription()
   const [activeTab, setActiveTab] = useState('overview')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState('')
@@ -1215,6 +1217,20 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Trial Expired Overlay - Blocks entire dashboard */}
+      {isFreePlan && trialExpired && (
+        <TrialExpiredOverlay onUpgrade={() => setShowUpgradeModal(true)} />
+      )}
+
+      {/* Trial Banner - Warning for free users */}
+      {isFreePlan && !trialExpired && (
+        <TrialBanner 
+          trialExpired={false}
+          daysRemaining={trialDaysRemaining}
+          onUpgrade={() => setShowUpgradeModal(true)}
+        />
       )}
 
       {/* Upgrade Modal */}
