@@ -114,7 +114,7 @@ export default function NewLandingPage() {
 
             
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-indigo-200 to-purple-200 text-transparent bg-clip-text leading-tight">
-            Market Intelligence '&amp; Competitive Watch<br />
+            Market Intelligence &amp; Competitive Watch<br />
               <span className="text-indigo-400">One Dashboard</span>
             </h1>
             
