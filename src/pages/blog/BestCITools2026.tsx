@@ -9,6 +9,44 @@ export default function BestCITools2026() {
     if (metaDescription) {
       metaDescription.setAttribute('content', 'Compare the top 10 competitive intelligence platforms in 2026. In-depth reviews, pricing, and features to help you choose the right CI tool.')
     }
+    
+    // Inject Schema.org Article structured data
+    const schemaScript = document.createElement('script')
+    schemaScript.type = 'application/ld+json'
+    schemaScript.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Best Competitive Intelligence Tools 2026",
+      "description": "Compare the top 10 competitive intelligence platforms in 2026. In-depth reviews, pricing, and features to help you choose the right CI tool.",
+      "image": "https://wyzelens.com/blog-images/best-ci-tools-2026.jpg",
+      "author": {
+        "@type": "Organization",
+        "name": "WyzeLens",
+        "url": "https://wyzelens.com"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Labwyze Inc.",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://wyzelens.com/logos/WyzeLensLogo.png"
+        }
+      },
+      "datePublished": "2026-03-11",
+      "dateModified": "2026-03-11",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://wyzelens.com/blog/best-ci-tools-2026"
+      }
+    })
+    document.head.appendChild(schemaScript)
+    
+    return () => {
+      const existingSchema = document.querySelector('script[type="application/ld+json"]')
+      if (existingSchema && existingSchema.textContent?.includes('Best Competitive Intelligence Tools')) {
+        existingSchema.remove()
+      }
+    }
   }, [])
 
   const scrollToSection = (id: string) => {

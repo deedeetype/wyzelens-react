@@ -9,6 +9,44 @@ export default function AICompetitorTracking() {
     if (metaDescription) {
       metaDescription.setAttribute('content', 'Learn how AI transforms competitive intelligence. Practical guide to tracking competitors, automating market research, and gaining strategic advantage with AI.')
     }
+    
+    // Inject Schema.org Article structured data
+    const schemaScript = document.createElement('script')
+    schemaScript.type = 'application/ld+json'
+    schemaScript.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "How to Track Markets and Competitors with AI",
+      "description": "Learn how AI transforms competitive intelligence. Practical guide to tracking competitors, automating market research, and gaining strategic advantage with AI.",
+      "image": "https://wyzelens.com/blog-images/ai-competitor-tracking.jpg",
+      "author": {
+        "@type": "Organization",
+        "name": "WyzeLens",
+        "url": "https://wyzelens.com"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Labwyze Inc.",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://wyzelens.com/logos/WyzeLensLogo.png"
+        }
+      },
+      "datePublished": "2026-03-11",
+      "dateModified": "2026-03-11",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://wyzelens.com/blog/ai-competitor-tracking"
+      }
+    })
+    document.head.appendChild(schemaScript)
+    
+    return () => {
+      const existingSchema = document.querySelector('script[type="application/ld+json"]')
+      if (existingSchema && existingSchema.textContent?.includes('How to Track Markets and Competitors')) {
+        existingSchema.remove()
+      }
+    }
   }, [])
 
   const scrollToSection = (id: string) => {

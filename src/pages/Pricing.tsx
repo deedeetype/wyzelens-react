@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/react'
 import { Check, Crown, Zap, Shield, Mail } from 'lucide-react'
@@ -9,6 +9,72 @@ export default function Pricing() {
   const { user } = useUser()
   const { plan: currentPlan } = useSubscription()
   const [loading, setLoading] = useState('')
+  
+  // SEO: Meta tags + Schema markup
+  useEffect(() => {
+    document.title = 'Pricing — WyzeLens AI Competitive Intelligence Platform'
+    const metaDescription = document.querySelector('meta[name="description"]')
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Transparent pricing for WyzeLens competitive intelligence platform. Start free, scale as you grow. Plans from $0 to custom enterprise solutions.')
+    }
+    
+    // Inject Schema.org structured data for pricing
+    const schemaScript = document.createElement('script')
+    schemaScript.type = 'application/ld+json'
+    schemaScript.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "WyzeLens",
+      "description": "AI-powered competitive intelligence platform",
+      "url": "https://wyzelens.com",
+      "brand": {
+        "@type": "Organization",
+        "name": "Labwyze Inc."
+      },
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free Plan",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "1 profile, 5 competitors, 1 manual refresh/day"
+        },
+        {
+          "@type": "Offer",
+          "name": "Starter Plan",
+          "price": "39",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2026-12-31",
+          "description": "3 profiles, 10 competitors, weekly automated refresh"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro Plan",
+          "price": "79",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2026-12-31",
+          "description": "5 profiles, 15 competitors, daily automated refresh, watchlist, regional filters"
+        },
+        {
+          "@type": "Offer",
+          "name": "Business Plan",
+          "price": "119",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2026-12-31",
+          "description": "10 profiles, 20 competitors, every 6-hour automated refresh, API access"
+        }
+      ]
+    })
+    document.head.appendChild(schemaScript)
+    
+    return () => {
+      // Cleanup schema on unmount
+      const existingSchema = document.querySelector('script[type="application/ld+json"]')
+      if (existingSchema && existingSchema.textContent?.includes('WyzeLens')) {
+        existingSchema.remove()
+      }
+    }
+  }, [])
   
   // Dynamic CTA text based on current plan
   const getButtonText = (planId: string, isPaidPlan: boolean) => {

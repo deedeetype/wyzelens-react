@@ -9,6 +9,44 @@ export default function CrayonKlueWyzeLens() {
     if (metaDescription) {
       metaDescription.setAttribute('content', 'Head-to-head comparison of Crayon, Klue, and WyzeLens. Compare features, pricing, and use cases to choose the best competitive intelligence platform.')
     }
+    
+    // Inject Schema.org Article structured data
+    const schemaScript = document.createElement('script')
+    schemaScript.type = 'application/ld+json'
+    schemaScript.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Crayon vs Klue vs WyzeLens: Which CI Tool is Right for You?",
+      "description": "Head-to-head comparison of Crayon, Klue, and WyzeLens. Compare features, pricing, and use cases to choose the best competitive intelligence platform.",
+      "image": "https://wyzelens.com/blog-images/crayon-klue-wyzelens-comparison.jpg",
+      "author": {
+        "@type": "Organization",
+        "name": "WyzeLens",
+        "url": "https://wyzelens.com"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Labwyze Inc.",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://wyzelens.com/logos/WyzeLensLogo.png"
+        }
+      },
+      "datePublished": "2026-03-11",
+      "dateModified": "2026-03-11",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://wyzelens.com/blog/crayon-vs-klue-vs-wyzelens"
+      }
+    })
+    document.head.appendChild(schemaScript)
+    
+    return () => {
+      const existingSchema = document.querySelector('script[type="application/ld+json"]')
+      if (existingSchema && existingSchema.textContent?.includes('Crayon vs Klue vs WyzeLens')) {
+        existingSchema.remove()
+      }
+    }
   }, [])
 
   const scrollToSection = (id: string) => {
