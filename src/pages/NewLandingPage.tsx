@@ -111,18 +111,15 @@ export default function NewLandingPage() {
 
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-2 mb-6 animate-fade-in">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm text-indigo-300">Powered by Advanced AI Models</span>
-            </div>
+
             
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-indigo-200 to-purple-200 text-transparent bg-clip-text leading-tight">
-              Know Your Competition<br />
-              <span className="text-indigo-400">Before They Know You</span>
+            Market Intelligence '&amp; Competitive Watch<br />
+              <span className="text-indigo-400">One Dashboard</span>
             </h1>
             
             <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Competitive intelligence used to cost $50K/year and a full-time analyst. Now it takes 45 seconds. WyzeLens uses AI to monitor your industry and competitors 24/7 and deliver the insights that actually matter — pricing shifts, feature launches, positioning changes — straight to your dashboard.
+            Stop jumping between 20 tabs, newsletters, and news feeds to understand what's happening in your market. WyzeLens aggregates insights from hundreds of sources — industry news, market trends, and competitor moves like pricing shifts, feature launches, and positioning changes — and delivers what matters to you in seconds, not hours.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -130,7 +127,7 @@ export default function NewLandingPage() {
                 to="/sign-up"
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg shadow-indigo-500/50"
               >
-                Start Now
+                Start Free Trial Now
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <a 
@@ -782,21 +779,18 @@ export default function NewLandingPage() {
                 quote: "WyzeLens gave us the early warning we needed when our main competitor started pivoting. We adjusted our strategy 3 months ahead of the market—that's a game-changer.",
                 author: "Sarah Chen",
                 role: "VP Strategy",
-                company: "TechVentures Inc.",
                 avatar: "SC"
               },
               {
                 quote: "I used to spend 6+ hours every Monday morning tracking competitors manually. Now WyzeLens does it automatically while I focus on execution. ROI paid for itself in week one.",
                 author: "Marcus Rodriguez",
                 role: "Product Director",
-                company: "InnovateLabs",
                 avatar: "MR"
               },
               {
                 quote: "The AI insights are scary good. It flagged a funding round 2 days before TechCrunch reported it. We had our counter-positioning ready before anyone else even knew.",
                 author: "Emily Park",
                 role: "Founder & CEO",
-                company: "NexusAI",
                 avatar: "EP"
               }
             ].map((testimonial, i) => (
@@ -814,7 +808,6 @@ export default function NewLandingPage() {
                   <div>
                     <div className="font-semibold">{testimonial.author}</div>
                     <div className="text-sm text-gray-400">{testimonial.role}</div>
-                    <div className="text-sm text-indigo-400">{testimonial.company}</div>
                   </div>
                 </div>
               </div>
@@ -880,7 +873,7 @@ export default function NewLandingPage() {
             to="/sign-up"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-10 py-5 rounded-lg font-semibold text-xl transition-all transform hover:scale-105 shadow-lg shadow-indigo-500/50"
           >
-            Start Now
+            Start Free Trial Now
             <ArrowRight className="w-6 h-6" />
           </Link>
         </div>
