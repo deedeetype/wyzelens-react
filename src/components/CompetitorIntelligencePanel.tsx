@@ -15,10 +15,10 @@ import type { Competitor } from '@/lib/supabase'
 
 interface Props {
   competitor: Competitor
+  userId: string // Pass userId from parent instead of using useUser here
 }
 
-export default function CompetitorIntelligencePanel({ competitor }: Props) {
-  const { user } = useUser()
+export default function CompetitorIntelligencePanel({ competitor, userId }: Props) {
   const { intelligence, loading, error } = useCompetitorIntelligence(competitor.id)
   const [enriching, setEnriching] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']))
@@ -36,11 +36,11 @@ export default function CompetitorIntelligencePanel({ competitor }: Props) {
   }
 
   const handleEnrich = async () => {
-    if (!user?.id || enriching) return
+    if (!userId || enriching) return
     
     setEnriching(true)
     try {
-      await enrichCompetitor(competitor.id, user.id)
+      await enrichCompetitor(competitor.id, userId)
       // Refresh page to show new data
       window.location.reload()
     } catch (err: any) {

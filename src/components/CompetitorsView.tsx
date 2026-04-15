@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useUser } from '@clerk/clerk-react'
 import { type Competitor } from '@/lib/supabase'
 import { useNewsActions } from '@/hooks/useNewsActions'
 import { Target, AlertTriangle, TrendingUp, ExternalLink, Building, Sparkles } from 'lucide-react'
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function CompetitorsView({ competitors, loading, refetch }: Props) {
+  const { user } = useUser()
   const { deleteCompetitor } = useNewsActions()
   const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'intelligence'>('overview')
@@ -232,7 +234,7 @@ export default function CompetitorsView({ competitors, loading, refetch }: Props
                       )}
                     </>
                   ) : (
-                    <CompetitorIntelligencePanel competitor={comp} />
+                    <CompetitorIntelligencePanel competitor={comp} userId={user?.id || ''} />
                   )}
                 </div>
               </div>
