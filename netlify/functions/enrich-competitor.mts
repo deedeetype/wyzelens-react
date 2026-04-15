@@ -32,18 +32,41 @@ async function supabaseGet(table: string, filter: string) {
 }
 
 async function supabaseUpsert(table: string, data: any) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+  // Try UPDATE first
+  const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/${table}?competitor_id=eq.${data.competitor_id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY!,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  })
+  
+  if (updateRes.ok) {
+    const result = await updateRes.json()
+    if (result && result.length > 0) {
+      console.log('[UPSERT] Updated existing record')
+      return result
+    }
+  }
+  
+  // If UPDATE returned nothing, try INSERT
+  console.log('[UPSERT] No existing record, inserting new')
+  const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_KEY!,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=representation'
+      'Prefer': 'return=representation'
     },
     body: JSON.stringify(data)
   })
-  if (!res.ok) throw new Error(`Supabase UPSERT ${table}: ${res.status} ${await res.text()}`)
-  return res.json()
+  
+  if (!insertRes.ok) throw new Error(`Supabase UPSERT ${table}: ${insertRes.status} ${await insertRes.text()}`)
+  return insertRes.json()
 }
 
 // ========== FIRECRAWL ENRICHMENT ==========
