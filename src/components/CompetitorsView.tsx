@@ -15,12 +15,17 @@ interface Props {
 }
 
 export default function CompetitorsView({ competitors, loading, refetch }: Props) {
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
   const { deleteCompetitor } = useNewsActions()
   const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'intelligence'>('overview')
   const [sortBy, setSortBy] = useState<'threat_score' | 'name' | 'activity_level'>('threat_score')
   const [filterActivity, setFilterActivity] = useState<string>('all')
+  
+  // Don't render Intelligence tab until user is loaded
+  if (!isLoaded) {
+    return <div className="text-slate-400 text-center py-20">Loading...</div>
+  }
 
   const handleDelete = async (competitorId: string) => {
     try {
