@@ -3,10 +3,12 @@
  */
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseClient } from '@/lib/supabase'
+import { useAuth } from '@clerk/react'
 import type { CompetitorIntelligence } from '@/types/intelligence'
 
 export function useCompetitorIntelligence(competitorId: string | null) {
+  const { getToken } = useAuth()
   const [intelligence, setIntelligence] = useState<CompetitorIntelligence | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,6 +25,13 @@ export function useCompetitorIntelligence(competitorId: string | null) {
       setError(null)
 
       try {
+        // Get Clerk session token
+        const token = await getToken({ template: 'supabase' })
+        console.log('[useCompetitorIntelligence] Got Clerk token:', token ? 'Yes' : 'No')
+        
+        // Create Supabase client with Clerk token
+        const supabase = createSupabaseClient(token || undefined)
+        
         const { data, error: supabaseError } = await supabase
           .from('competitor_intelligence')
           .select('*')
@@ -53,7 +62,7 @@ export function useCompetitorIntelligence(competitorId: string | null) {
     }
 
     fetchIntelligence()
-  }, [competitorId])
+  }, [competitorId, getToken])
 
   return { intelligence, loading, error }
 }
