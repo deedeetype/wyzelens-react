@@ -39,12 +39,14 @@ export default function CompetitorIntelligencePanel({ competitor, userId }: Prop
     
     setEnriching(true)
     try {
-      await enrichCompetitor(competitor.id, userId)
-      // Refresh page to show new data
-      window.location.reload()
+      const result = await enrichCompetitor(competitor.id, userId)
+      console.log('Enrichment result:', result)
+      
+      // Force reload to bypass cache
+      window.location.href = window.location.href
     } catch (err: any) {
+      console.error('Enrichment error:', err)
       alert('Enrichment failed: ' + err.message)
-    } finally {
       setEnriching(false)
     }
   }

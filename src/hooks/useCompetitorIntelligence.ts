@@ -18,6 +18,7 @@ export function useCompetitorIntelligence(competitorId: string | null) {
     }
 
     async function fetchIntelligence() {
+      console.log('[useCompetitorIntelligence] Fetching intelligence for:', competitorId)
       setLoading(true)
       setError(null)
 
@@ -28,18 +29,23 @@ export function useCompetitorIntelligence(competitorId: string | null) {
           .eq('competitor_id', competitorId)
           .single()
 
+        console.log('[useCompetitorIntelligence] Query result:', { data, error: supabaseError })
+
         if (supabaseError) {
           // 404 means not enriched yet (not an error)
           if (supabaseError.code === 'PGRST116') {
+            console.log('[useCompetitorIntelligence] No intelligence data found (not enriched yet)')
             setIntelligence(null)
           } else {
+            console.error('[useCompetitorIntelligence] Supabase error:', supabaseError)
             throw supabaseError
           }
         } else {
+          console.log('[useCompetitorIntelligence] Intelligence loaded:', data)
           setIntelligence(data)
         }
       } catch (err: any) {
-        console.error('Failed to fetch competitor intelligence:', err)
+        console.error('[useCompetitorIntelligence] Failed to fetch:', err)
         setError(err.message)
       } finally {
         setLoading(false)
