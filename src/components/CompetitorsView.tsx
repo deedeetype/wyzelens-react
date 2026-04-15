@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useUser } from '@clerk/react'
 import { type Competitor } from '@/lib/supabase'
 import { useNewsActions } from '@/hooks/useNewsActions'
 import { Target, AlertTriangle, TrendingUp, ExternalLink, Building, Sparkles } from 'lucide-react'

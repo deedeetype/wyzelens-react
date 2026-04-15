@@ -4,7 +4,6 @@
  */
 
 import { useState } from 'react'
-import { useUser } from '@clerk/clerk-react'
 import { useCompetitorIntelligence, enrichCompetitor } from '@/hooks/useCompetitorIntelligence'
 import { 
   Globe, Building2, Users, Briefcase, BookOpen, TrendingUp, 
