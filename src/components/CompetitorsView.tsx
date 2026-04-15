@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { type Competitor } from '@/lib/supabase'
 import { useNewsActions } from '@/hooks/useNewsActions'
-import { Target, AlertTriangle, TrendingUp, ExternalLink, Building } from 'lucide-react'
+import { Target, AlertTriangle, TrendingUp, ExternalLink, Building, Sparkles } from 'lucide-react'
 import ActionMenu from './ActionMenu'
+import CompetitorIntelligencePanel from './CompetitorIntelligencePanel'
 
 interface Props {
   competitors: Competitor[]
@@ -15,6 +16,7 @@ interface Props {
 export default function CompetitorsView({ competitors, loading, refetch }: Props) {
   const { deleteCompetitor } = useNewsActions()
   const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'intelligence'>('overview')
   const [sortBy, setSortBy] = useState<'threat_score' | 'name' | 'activity_level'>('threat_score')
   const [filterActivity, setFilterActivity] = useState<string>('all')
 
@@ -143,62 +145,96 @@ export default function CompetitorsView({ competitors, loading, refetch }: Props
 
             {/* Inline detail panel */}
             {selectedCompetitor?.id === comp.id && (
-              <div className="bg-slate-800 border border-t-0 border-indigo-500/50 rounded-b-xl p-5">
-                <div className={`grid grid-cols-2 ${comp.stock_ticker ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3 mb-4`}>
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">Threat Score</div>
-                    <div className={`text-xl font-bold ${threatColor(comp.threat_score)}`}>
-                      {comp.threat_score?.toFixed(1) || 'N/A'}
-                    </div>
-                  </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">Activity</div>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs border ${activityBadge(comp.activity_level)}`}>
-                      {comp.activity_level || 'Unknown'}
-                    </span>
-                  </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">Employees</div>
-                    <div className="text-lg font-bold text-white">
-                      {comp.employee_count ? comp.employee_count.toLocaleString() : 'N/A'}
-                    </div>
-                  </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">Industry</div>
-                    <div className="text-sm text-white">{comp.industry || 'N/A'}</div>
-                  </div>
-                  {comp.stock_ticker && (
-                    <div className="bg-slate-900/50 rounded-lg p-3">
-                      <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        {comp.stock_ticker}
-                      </div>
-                      {comp.stock_price ? (
-                        <div>
-                          <div className="text-lg font-bold text-white">
-                            {comp.stock_currency === 'CAD' ? 'C$' : '$'}{comp.stock_price.toFixed(2)}
+              <div className="bg-slate-800 border border-t-0 border-indigo-500/50 rounded-b-xl">
+                {/* Tabs */}
+                <div className="flex border-b border-slate-700">
+                  <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition ${
+                      activeTab === 'overview'
+                        ? 'text-white border-b-2 border-indigo-500 bg-slate-800/50'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('intelligence')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition flex items-center justify-center gap-2 ${
+                      activeTab === 'intelligence'
+                        ? 'text-white border-b-2 border-indigo-500 bg-slate-800/50'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Intelligence
+                  </button>
+                </div>
+
+                {/* Tab content */}
+                <div className="p-5">
+                  {activeTab === 'overview' ? (
+                    <>
+                      <div className={`grid grid-cols-2 ${comp.stock_ticker ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3 mb-4`}>
+                        <div className="bg-slate-900/50 rounded-lg p-3">
+                          <div className="text-xs text-slate-400 mb-1">Threat Score</div>
+                          <div className={`text-xl font-bold ${threatColor(comp.threat_score)}`}>
+                            {comp.threat_score?.toFixed(1) || 'N/A'}
                           </div>
-                          {comp.stock_change_percent != null && (
-                            <div className={`text-xs font-medium ${comp.stock_change_percent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {comp.stock_change_percent >= 0 ? '▲' : '▼'} {Math.abs(comp.stock_change_percent).toFixed(2)}%
-                            </div>
-                          )}
                         </div>
-                      ) : (
-                        <div className="text-sm text-slate-500">N/A</div>
+                        <div className="bg-slate-900/50 rounded-lg p-3">
+                          <div className="text-xs text-slate-400 mb-1">Activity</div>
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs border ${activityBadge(comp.activity_level)}`}>
+                            {comp.activity_level || 'Unknown'}
+                          </span>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-lg p-3">
+                          <div className="text-xs text-slate-400 mb-1">Employees</div>
+                          <div className="text-lg font-bold text-white">
+                            {comp.employee_count ? comp.employee_count.toLocaleString() : 'N/A'}
+                          </div>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-lg p-3">
+                          <div className="text-xs text-slate-400 mb-1">Industry</div>
+                          <div className="text-sm text-white">{comp.industry || 'N/A'}</div>
+                        </div>
+                        {comp.stock_ticker && (
+                          <div className="bg-slate-900/50 rounded-lg p-3">
+                            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              {comp.stock_ticker}
+                            </div>
+                            {comp.stock_price ? (
+                              <div>
+                                <div className="text-lg font-bold text-white">
+                                  {comp.stock_currency === 'CAD' ? 'C$' : '$'}{comp.stock_price.toFixed(2)}
+                                </div>
+                                {comp.stock_change_percent != null && (
+                                  <div className={`text-xs font-medium ${comp.stock_change_percent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {comp.stock_change_percent >= 0 ? '▲' : '▼'} {Math.abs(comp.stock_change_percent).toFixed(2)}%
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-slate-500">N/A</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {comp.description && (
+                        <p className="text-slate-300 text-sm leading-relaxed">{comp.description}</p>
                       )}
-                    </div>
+                      {comp.domain && (
+                        <a href={`https://${comp.domain}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-3 text-indigo-400 hover:text-indigo-300 text-sm">
+                          Visit {comp.domain} <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <CompetitorIntelligencePanel competitor={comp} />
                   )}
                 </div>
-                {comp.description && (
-                  <p className="text-slate-300 text-sm leading-relaxed">{comp.description}</p>
-                )}
-                {comp.domain && (
-                  <a href={`https://${comp.domain}`} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-3 text-indigo-400 hover:text-indigo-300 text-sm">
-                    Visit {comp.domain} <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
               </div>
             )}
           </div>
