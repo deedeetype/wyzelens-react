@@ -1,14 +1,25 @@
-import { Crown, Lock, Zap } from 'lucide-react'
+import { Crown, Lock, Zap, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface TrialExpiredOverlayProps {
   onUpgrade: () => void
+  onClose?: () => void
 }
 
-export default function TrialExpiredOverlay({ onUpgrade }: TrialExpiredOverlayProps) {
+export default function TrialExpiredOverlay({ onUpgrade, onClose }: TrialExpiredOverlayProps) {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 text-center">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 text-center relative">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        )}
+        
         <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <Lock className="w-10 h-10 text-white" />
         </div>

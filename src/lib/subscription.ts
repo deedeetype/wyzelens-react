@@ -324,60 +324,117 @@ export async function getSubscriptionInfo(userId: string, token?: string) {
 }
 
 // Check if user's free trial has expired and should be blocked
-// For free users: uses Clerk user.createdAt (passed from frontend)
+// ANTI-ABUSE: Tracks by email (not user_id) to prevent account deletion exploit
+// For free users: checks trial_history table by email
 // For paid users: always has access
 export async function checkTrialAccess(
   userId: string, 
-  userCreatedAt?: string | number,
+  userEmail: string,
   token?: string
 ): Promise<{
   hasAccess: boolean
   trialExpired: boolean
   daysRemaining: number
   plan: PlanName
+  isNewUser: boolean
 }> {
   try {
     const supabase = createSupabaseClient(token)
     
     // Check if user has a paid subscription
-    const { data, error } = await supabase
+    const { data: subData, error: subError } = await supabase
       .from('user_subscriptions')
       .select('plan, status, created_at')
       .eq('user_id', userId)
       .single()
     
     // User has a paid plan in Stripe
-    if (!error && data && data.plan !== 'free') {
+    if (!subError && subData && subData.plan !== 'free') {
       return { 
         hasAccess: true, 
         trialExpired: false, 
         daysRemaining: 999, 
-        plan: data.plan as PlanName 
+        plan: subData.plan as PlanName,
+        isNewUser: false
       }
     }
     
-    // Free user - check trial based on Clerk createdAt
-    if (!userCreatedAt) {
-      console.warn('[checkTrialAccess] No userCreatedAt provided for free user')
-      return { hasAccess: false, trialExpired: true, daysRemaining: 0, plan: 'free' }
+    // Free user - check trial_history by email (ANTI-ABUSE)
+    if (!userEmail) {
+      console.error('[checkTrialAccess] No email provided for free user')
+      return { 
+        hasAccess: false, 
+        trialExpired: true, 
+        daysRemaining: 0, 
+        plan: 'free',
+        isNewUser: false
+      }
     }
     
-    // Convert Clerk timestamp (milliseconds) to ISO string if needed
-    const createdAtISO = typeof userCreatedAt === 'number' 
-      ? new Date(userCreatedAt).toISOString() 
-      : userCreatedAt
+    const normalizedEmail = userEmail.toLowerCase().trim()
     
-    const expired = isTrialExpired(createdAtISO)
-    const daysRemaining = getTrialDaysRemaining(createdAtISO)
+    // Check if email already used a trial
+    const { data: trialData, error: trialError } = await supabase
+      .from('trial_history')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .single()
+    
+    if (trialData) {
+      // Email has been used before
+      const daysSinceFirstTrial = (Date.now() - new Date(trialData.first_trial_started_at).getTime()) / (1000 * 60 * 60 * 24)
+      const trialExpired = daysSinceFirstTrial > 7
+      
+      // Log repeat attempt if trial expired
+      if (trialExpired) {
+        await supabase
+          .from('trial_history')
+          .update({ 
+            attempt_count: (trialData.attempt_count || 1) + 1,
+            last_attempt_at: new Date().toISOString()
+          })
+          .eq('email', normalizedEmail)
+      }
+      
+      return {
+        hasAccess: !trialExpired,
+        trialExpired,
+        daysRemaining: Math.max(0, 7 - Math.floor(daysSinceFirstTrial)),
+        plan: 'free',
+        isNewUser: false
+      }
+    }
+    
+    // New email - create trial record
+    const { error: insertError } = await supabase
+      .from('trial_history')
+      .insert({
+        email: normalizedEmail,
+        first_trial_started_at: new Date().toISOString(),
+        trial_used: true,
+        attempt_count: 1,
+        last_attempt_at: new Date().toISOString()
+      })
+    
+    if (insertError) {
+      console.error('[checkTrialAccess] Failed to create trial record:', insertError)
+    }
     
     return {
-      hasAccess: !expired,
-      trialExpired: expired,
-      daysRemaining,
-      plan: 'free'
+      hasAccess: true,
+      trialExpired: false,
+      daysRemaining: 7,
+      plan: 'free',
+      isNewUser: true
     }
   } catch (error) {
     console.error('Error checking trial access:', error)
-    return { hasAccess: false, trialExpired: true, daysRemaining: 0, plan: 'free' }
+    return { 
+      hasAccess: false, 
+      trialExpired: true, 
+      daysRemaining: 0, 
+      plan: 'free',
+      isNewUser: false
+    }
   }
 }

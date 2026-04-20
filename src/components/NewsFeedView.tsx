@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react'
 import { useNewsFeedContext } from '@/contexts/NewsFeedContext'
 import { useNewsActions } from '@/hooks/useNewsActions'
 import { useArchivedNews } from '@/hooks/useArchivedNews'
+import { useTrialGate } from '@/hooks/useTrialGate'
 import { Newspaper, ExternalLink, TrendingUp, TrendingDown, Minus, Calendar, Archive, Trash2, MoreVertical, Share2 } from 'lucide-react'
 
 export default function NewsFeedView({ scanId }: { scanId?: string }) {
   const { news, loading, markAsRead, archiveNewsOptimistic, refetch } = useNewsFeedContext()
   const { archivedNews, archivedCount, loading: archivedLoading, fetchArchived, fetchArchivedCount } = useArchivedNews(scanId)
   const { archiveNews, unarchiveNews, deleteNews, loading: actionLoading } = useNewsActions()
+  const { checkTrialAccess } = useTrialGate()
   const [selectedNews, setSelectedNews] = useState<any | null>(null)
   const [filterMode, setFilterMode] = useState<'all' | 'read' | 'unread'>('all')
   const [showMenu, setShowMenu] = useState<string | null>(null)
@@ -420,6 +422,11 @@ export default function NewsFeedView({ scanId }: { scanId?: string }) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
+                        // Check trial access before share
+                        if (!checkTrialAccess('share')) {
+                          setShowMenu(null)
+                          return
+                        }
                         setShowShareMenu(item.id)
                         setShowMenu(null)
                       }}

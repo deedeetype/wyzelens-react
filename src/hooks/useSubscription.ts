@@ -21,11 +21,19 @@ export function useSubscription() {
         const userPlan = await getUserPlan(user.id)
         setPlan(userPlan)
         
-        // Check trial status for free users using Clerk createdAt
+        // Check trial status for free users using email (ANTI-ABUSE)
         if (userPlan === 'free') {
-          // Clerk provides createdAt as Date object - convert to timestamp
-          const userCreatedAt = user.createdAt ? user.createdAt.getTime() : Date.now()
-          const trialStatus = await checkTrialAccess(user.id, userCreatedAt)
+          // Get primary email from Clerk
+          const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress
+          
+          if (!userEmail) {
+            console.error('[useSubscription] No email found for user')
+            setTrialExpired(true)
+            setTrialDaysRemaining(0)
+            return
+          }
+          
+          const trialStatus = await checkTrialAccess(user.id, userEmail)
           setTrialExpired(trialStatus.trialExpired)
           setTrialDaysRemaining(trialStatus.daysRemaining)
         }
@@ -38,7 +46,7 @@ export function useSubscription() {
     }
 
     loadPlan()
-  }, [user?.id, user?.createdAt])
+  }, [user?.id, user?.primaryEmailAddress?.emailAddress])
 
   const limits = getPlanLimits(plan)
 

@@ -45,12 +45,14 @@ import UpgradeModal from '@/components/UpgradeModal'
 import TrialBanner from '@/components/TrialBanner'
 import TrialExpiredOverlay from '@/components/TrialExpiredOverlay'
 import { useSubscription } from '@/hooks/useSubscription'
+import { useTrialGate } from '@/hooks/useTrialGate'
 
 export default function Dashboard() {
   const { user, isLoaded } = useUser()
   const { getToken } = useAuth()
   const { settings, t } = useSettings()
   const { plan, isFreePlan, trialExpired, trialDaysRemaining } = useSubscription()
+  const { checkTrialAccess, showTrialModal, closeTrialModal } = useTrialGate()
   const [activeTab, setActiveTab] = useState('overview')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState('')
@@ -600,9 +602,15 @@ export default function Dashboard() {
           <Menu className="w-6 h-6" />
         </button>
 
-        {/* Trial Expired Overlay - Blocks entire dashboard */}
-        {isFreePlan && trialExpired && (
-          <TrialExpiredOverlay onUpgrade={() => setShowUpgradeModal(true)} />
+        {/* Trial Expired Modal - Only shows when user tries protected action */}
+        {showTrialModal && (
+          <TrialExpiredOverlay 
+            onUpgrade={() => { 
+              closeTrialModal()
+              setShowUpgradeModal(true) 
+            }} 
+            onClose={closeTrialModal}
+          />
         )}
 
         {/* Trial Banner - Warning for free users */}
@@ -662,6 +670,10 @@ export default function Dashboard() {
                 <button
                   onClick={async () => {
                     if (!selectedScan) return
+                    
+                    // Check trial access before refresh
+                    if (!checkTrialAccess('refresh')) return
+                    
                     setIsScanning(true)
                     setScanProgress('🔄 Starting refresh...')
                     setScanProgressPercent(10)
@@ -755,7 +767,10 @@ export default function Dashboard() {
               )}
               
               <button
-                onClick={() => { 
+                onClick={() => {
+                  // Check trial access before opening modal
+                  if (!checkTrialAccess('new_scan')) return
+                  
                   setShowScanModal(true)
                   // Reset to settings values when opening modal
                   const defaultUrl = settings.profile.companyUrl || ''
